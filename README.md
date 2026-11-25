@@ -24,4 +24,4 @@ Asistente de finanzas personales conectado a Google Drive. Importa resúmenes de
 node tests/backend.test.js && node tests/core.test.js && node tests/e2e.test.js
 ```
 
-La versión anterior quedó en `legacy/index-v1.html`.
+La versión anterior (sin conexión a Drive, datos en el navegador) sigue disponible en <https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/v1/> para quien la use.
