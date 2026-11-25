@@ -4,7 +4,7 @@ const assert = require('assert'), path = require('path'), fs = require('fs');
 let pw; try { pw = require('playwright-core'); } catch (e) { pw = require('/opt/npm-tools/node_modules/playwright-core'); }
 const { makeServer } = require('./server');
 const FX = f => path.join(__dirname, 'fixtures', f), SHOTS = path.join(__dirname, 'screenshots');
-const PORT = 8799, URL = 'http://localhost:' + PORT + '/';
+const PORT = 8799, URL = 'http://localhost:' + PORT + '/v2/';
 let pass = 0; const ok = n => { pass++; console.log('  ✓', n); };
 
 (async () => {

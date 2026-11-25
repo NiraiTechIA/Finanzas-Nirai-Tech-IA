@@ -61,7 +61,7 @@ GitHub Pages (la app)  ──►  Apps Script (tu backend, corre con tu cuenta) 
 
 Tenés dos opciones:
 
-- **En el repo (recomendado):** editá [`js/config.js`](../js/config.js), poné `BACKEND_URL` y `GOOGLE_CLIENT_ID`, y hacé commit. Sirve para todos tus dispositivos.
+- **En el repo (recomendado):** editá [`v2/js/config.js`](../v2/js/config.js), poné `BACKEND_URL` y `GOOGLE_CLIENT_ID`, y hacé commit. Sirve para todos tus dispositivos.
 - **Desde la app:** *Ajustes → Google Drive*, pegá los dos valores y guardá. Esto queda solo en ese navegador.
 
 Después: en **Ajustes**, tocá **Iniciar sesión con Google**. El estado arriba a la derecha tiene que decir ☁️ *Sincronizado*.
@@ -70,7 +70,7 @@ Si usabas la versión anterior en ese mismo navegador, en Inicio aparece **"Enco
 
 ## 6. GitHub Pages
 
-En el repo: **Settings → Pages → Build and deployment → Deploy from a branch → `main` / `(root)`**. La app queda en <https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/>.
+En el repo: **Settings → Pages → Build and deployment → Deploy from a branch → `main` / `(root)`**. La versión nueva queda en <https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/v2/>. El link de siempre sigue mostrando la versión anterior.
 
 En el celular, abrila en Chrome y elegí **⋮ → Agregar a pantalla de inicio**. Queda como una app más.
 
@@ -107,5 +107,5 @@ Esa planilla trae los totales mensuales, trimestrales, semestrales, anuales y po
 node tests/backend.test.js   # backend contra Drive/Sheets emulados
 node tests/core.test.js      # intérprete de mensajes, duplicados y cálculos
 node tests/e2e.test.js       # Chrome + app + backend (requiere playwright-core y Chrome)
-node tests/server.js 8765    # app local con backend emulado: http://localhost:8765
+node tests/server.js 8765    # app local con backend emulado: http://localhost:8765/v2/
 ```

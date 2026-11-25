@@ -1,7 +1,7 @@
 // Pruebas del núcleo (js/core.js): intérprete de mensajes, clasificación, duplicados y cálculos.
 const fs = require('fs'), vm = require('vm'), assert = require('assert'), path = require('path');
 const ctx = { console, Intl, Date, Math, JSON }; vm.createContext(ctx);
-vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'js', 'core.js'), 'utf8'), ctx);
+vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'v2', 'js', 'core.js'), 'utf8'), ctx);
 const C = ctx; let pass = 0; const t = (n, f) => { f(); pass++; console.log('  ✓', n); };
 C.loadTables({});
 const HOY = '2026-11-24';
