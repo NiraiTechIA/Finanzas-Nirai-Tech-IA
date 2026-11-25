@@ -1,0 +1,10 @@
+{
+  "name": "finanzas-nirai-tech-ia",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Asistente de finanzas personales conectado a Google Drive",
+  "scripts": {
+    "test": "node tests/backend.test.js && node tests/core.test.js && node tests/e2e.test.js",
+    "dev": "node tests/server.js 8765"
+  }
+}
