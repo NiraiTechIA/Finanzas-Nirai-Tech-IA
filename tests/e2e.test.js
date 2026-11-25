@@ -14,6 +14,7 @@ let pass = 0; const ok = n => { pass++; console.log('  ✓', n); };
   const errors = [];
   const newPage = async (ctx, connected) => {
     const page = await ctx.newPage();
+    await page.route('**/js/config.js', r => r.fulfill({ contentType: 'text/javascript', body: "window.NIRAI_CONFIG = { BACKEND_URL: '', GOOGLE_CLIENT_ID: '' };" }));   // pruebas: sin la configuración real
     page.on('pageerror', e => errors.push(e.message));
     page.on('console', m => { if (m.type() === 'error' && !/gsi|accounts\.google|favicon|ERR_/.test(m.text())) errors.push(m.text()); });
     page.on('dialog', d => d.accept(d.type() === 'prompt' ? (d.message().includes('Ícono') ? '🧃' : d.message().includes('cuánto') ? '1.480.000' : 'Kiosco') : undefined));
@@ -163,6 +164,12 @@ let pass = 0; const ok = n => { pass++; console.log('  ✓', n); };
   await p.screenshot({ path: path.join(SHOTS, 'inicio.png'), fullPage: true });
   await p.click('svg.donut path >> nth=0'); assert(await p.isVisible('text=📋 Movimientos'), 'clic en el gráfico filtra movimientos');
   ok('dashboard con KPIs, gráficos interactivos y tooltips');
+  await tab(p, 'inicio'); assert(await p.isVisible('text=Gastos fijos de noviembre'));
+  assert(await p.isVisible('.fijos li:has-text("Netflix") >> text=pagado'), 'Netflix (MP) aparece como fijo pagado');
+  await p.screenshot({ path: path.join(SHOTS, 'fijos.png'), fullPage: false, clip: await p.$eval('.fijos', el => { const r = el.closest('.card').getBoundingClientRect(); return { x: r.x, y: r.y + window.scrollY, width: r.width, height: r.height }; }) }).catch(() => { });
+  await tab(p, 'movimientos'); await p.click('[data-act="fltClear"]'); await p.click('[data-act="fltFlag"][data-k="Fijo"]');
+  assert((await p.$$eval('table.movs tbody tr.click', x => x.length)) >= 1); await p.click('[data-act="fltFlag"][data-k="Fijo"]');
+  ok('panel de gastos fijos (pagados / pendientes) y filtro de fijos');
 
   await tab(p, 'reportes'); for (const k of ['trim', 'sem', 'anio']) { await p.click(`[data-act="period"][data-k="${k}"]`); assert(await p.isVisible('table tbody tr')); }
   const dl = p.waitForEvent('download'); await p.click('[data-act="xlsx"] >> nth=0'); const d = await dl; assert(/\.xlsx$/.test(d.suggestedFilename()));

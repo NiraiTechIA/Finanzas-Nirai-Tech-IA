@@ -44,7 +44,9 @@ var DEFAULT_CATS = [
 ];
 // nombres de la versión 1 → versión 2
 var LEGACY_CATS = { 'Comida y salidas': 'Comida y restaurantes', 'Nafta': 'Combustible y transporte', 'Transporte': 'Combustible y transporte', 'Seguro de auto': 'Seguros', 'Reparación de auto': 'Mantenimiento', 'Celular': 'Celular e internet', 'Otra tarjeta (sin detalle)': 'Tarjeta sin detalle', 'Compras en cuotas': 'Compras varias', 'Cliente (negocio)': 'Clientes (negocio)', 'Transferencia propia': 'Transferencias propias', 'Ida y vuelta': 'Transferencias propias', 'Pago Visa': 'Pago de tarjeta', 'Pago tarjeta': 'Pago de tarjeta', 'Rendimiento': 'Inversiones' };
-var DEFAULT_CFG = { ahorroMeta: 0, saldoInicial: 0, saldoInicialFecha: '', colchonMeses: 3, nProm: 3, mpReservado: 0, usd: 0, tc: 0, propios: [], recurrentes: [], omitidos: {} };
+// palabras que hacen que un gasto sea FIJO aunque su categoría sea variable (ej: obra social dentro de Salud). Editable en Ajustes.
+var DEFAULT_FIJOS = 'obra social,prepaga,osde,swiss medical,galeno,medicus,omint,ioma,sancor salud,hospital italiano,medife,seguro,gimnasio,gym,megatlon,sportclub,club,cuota social,alquiler,expensas,colegio,cuota escolar,monotributo,internet,telefonia,pago de servicio';
+var DEFAULT_CFG = { fijosPalabras: DEFAULT_FIJOS, noFijos: [], ahorroMeta: 0, saldoInicial: 0, saldoInicialFecha: '', colchonMeses: 3, nProm: 3, mpReservado: 0, usd: 0, tc: 0, propios: [], recurrentes: [], omitidos: {} };
 
 /* ============================ Utilidades ============================ */
 var nf0 = new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 });
@@ -157,10 +159,19 @@ function matchCategory(text, tipo) {
   for (var i = 0; i < l.length; i++) if ((!tipo || l[i].tipo === tipo) && l[i].re.test(d)) return l[i];
   return null;
 }
-function defaultFlag(cat, tipo, cuota) {
+var _fxCache = { sig: null, re: null };
+function fixedRe() {
+  var sig = DB.cfg.fijosPalabras == null ? DEFAULT_FIJOS : DB.cfg.fijosPalabras;
+  if (sig !== _fxCache.sig) { var ws = String(sig).split(',').map(function (w) { return norm(w).trim(); }).filter(Boolean); _fxCache = { sig: sig, re: ws.length ? new RegExp('(^|[^a-z0-9])(' + ws.map(escRe).join('|') + ')($|[^a-z0-9])') : null }; }
+  return _fxCache.re;
+}
+function isFixedText(desc) { var re = fixedRe(); return !!(re && desc && re.test(norm(desc))); }
+function defaultFlag(cat, tipo, cuota, desc) {
   if (tipo !== 'Gasto') return '';
   if (cuota) { var p = String(cuota).split('/').map(Number); return p[0] < p[1] ? 'Cuota' : 'Único'; }
   if (cat === 'Negocio (costos)') return 'Negocio';
+  if (desc && (DB.cfg.noFijos || []).indexOf(normKey(desc)) >= 0) return 'Variable';
+  if (desc && isFixedText(desc)) return 'Fijo';
   return FIXED_CATS.indexOf(cat) >= 0 ? 'Fijo' : 'Variable';
 }
 
@@ -184,7 +195,8 @@ function classify(m, ctx) {
   else {
     var isCard = m.medio === 'Tarjeta de crédito', pagos = ctx.pagos || cardPagos();
     var own = (ctx.own || ownTokens()).some(function (tks) { return tks.every(function (t) { return d.indexOf(t) >= 0; }); });
-    if (!isCard && /^rendimientos?\b/.test(d)) { m.tipo = 'Ingreso'; m.categoria = 'Inversiones'; }
+    if (isCard && /saldo a favor|saldo anterior|su pago|pago en pesos|pago en dolares/.test(d)) { m.tipo = 'Interno'; m.categoria = 'Pago de tarjeta'; m.nota = m.nota || 'Saldo o pago del resumen anterior: no es ingreso ni gasto.'; }
+    else if (!isCard && /^rendimientos?\b/.test(d)) { m.tipo = 'Ingreso'; m.categoria = 'Inversiones'; }
     else if (!isCard && own && /transferencia|transf\b/.test(d)) {
       var pv = pagos.some(function (p) { return Math.abs(Math.abs(m.monto) - p) <= 100; });
       m.tipo = 'Interno'; m.categoria = pv ? 'Pago de tarjeta' : 'Transferencias propias';
@@ -202,7 +214,7 @@ function classify(m, ctx) {
   var cat = catByName(m.categoria); if (cat && cat.tipo !== 'Gasto' && cat.tipo !== m.tipo) m.tipo = cat.tipo;
   if (m.tipo !== 'Gasto') m.flag = '';
   else if (m.cuota) m.flag = defaultFlag(m.categoria, m.tipo, m.cuota);
-  else if (!m.flag) m.flag = defaultFlag(m.categoria, m.tipo);
+  else if (!m.flag) m.flag = defaultFlag(m.categoria, m.tipo, '', m.descripcion);
   return m;
 }
 /** El usuario cambió la categoría/tipo: lo recuerda para ese comercio y lo aplica a los iguales sin clasificar. */
@@ -216,6 +228,57 @@ function learnFrom(m) {
     }
   });
   return n;
+}
+/** Marca un comercio/concepto como Fijo o Variable: lo recuerda y lo aplica a todos sus movimientos (meses anteriores y futuros). */
+function setFlagForKey(m, flag) {
+  var k = normKey(m.descripcion); if (!k) return 0;
+  putMap(k, { tipo: m.tipo, categoria: m.categoria, flag: flag });
+  var nf = (DB.cfg.noFijos || []).filter(function (x) { return x !== k; }); if (flag === 'Variable') nf.push(k);
+  setCfg('noFijos', nf);
+  var n = 0;
+  activeMovs().forEach(function (o) { if (normKey(o.descripcion) === k && o.tipo === 'Gasto' && !o.cuota && o.flag !== flag) { o.flag = flag; putMov(o); n++; } });
+  return n;
+}
+/** Aplica las palabras de gastos fijos a los movimientos existentes (solo pasa Variable → Fijo; respeta lo que marcaste a mano). */
+function recalcFijos() {
+  var n = 0, no = DB.cfg.noFijos || [];
+  activeMovs().forEach(function (m) {
+    if (m.tipo !== 'Gasto' || m.cuota || m.flag !== 'Variable') return;
+    var k = normKey(m.descripcion), mp = DB.map[k];
+    if (no.indexOf(k) >= 0 || (mp && mp.flag)) return;
+    if (isFixedText(m.descripcion)) { m.flag = 'Fijo'; putMov(m); n++; }
+  });
+  return n;
+}
+var NO_SUGERIR_FIJO = ['Supermercado', 'Comida y restaurantes', 'Combustible y transporte', 'Sin clasificar', 'Compras varias', 'Tarjeta sin detalle', 'Impuestos y percepciones', 'Entretenimiento'];
+/** Gastos fijos del mes: los conocidos (marcados Fijo en los últimos 4 meses) con su estado pagado / pendiente. */
+function fijosDelMes(mes) {
+  var desde = addMonths(mes, -3), known = {};
+  activeMovs().forEach(function (m) {
+    if (m.tipo !== 'Gasto' || m.cuota || m.flag !== 'Fijo' || m.mes < desde || m.mes > mes) return;
+    var k = normKey(m.descripcion) || norm(m.descripcion);
+    var e = known[k] || (known[k] = { key: k, desc: m.descripcion, categoria: m.categoria, medio: m.medio, cuenta: m.cuenta, esperado: 0, mesAnt: '', pagado: 0, usd: 0, movs: [], ref: m });
+    if (m.mes === mes) { e.pagado += -m.monto; e.usd += m.usd || 0; e.movs.push(m); e.desc = m.descripcion; e.medio = m.medio; e.categoria = m.categoria; e.ref = m; }
+    else if (m.mes >= e.mesAnt) { if (m.mes > e.mesAnt) { e.esperado = 0; e.mesAnt = m.mes; } e.esperado += -m.monto; if (!e.movs.length) { e.desc = m.descripcion; e.medio = m.medio; e.categoria = m.categoria; e.ref = m; } }
+  });
+  var list = Object.keys(known).map(function (k) { var e = known[k]; e.estado = e.movs.length ? 'pagado' : 'pendiente'; return e; });
+  list.sort(function (a, b) { return (a.estado === b.estado ? 0 : a.estado === 'pendiente' ? -1 : 1) || (Math.max(b.pagado, b.esperado) - Math.max(a.pagado, a.esperado)); });
+  var tot = { pagado: 0, pendiente: 0, nPagados: 0, nPendientes: 0 };
+  list.forEach(function (e) { if (e.estado === 'pagado') { tot.pagado += e.pagado; tot.nPagados++; } else { tot.pendiente += e.esperado; tot.nPendientes++; } });
+  return { lista: list, tot: tot };
+}
+/** Sugiere gastos que se repiten todos los meses con importe parecido y todavía no están marcados como fijos. */
+function sugerenciasFijos(mes) {
+  var desde = addMonths(mes, -2), g = {}, no = DB.cfg.noFijos || [];
+  activeMovs().forEach(function (m) {
+    if (m.tipo !== 'Gasto' || m.cuota || m.flag === 'Fijo' || m.mes < desde || m.mes > mes || NO_SUGERIR_FIJO.indexOf(m.categoria) >= 0 || !m.monto) return;
+    var k = normKey(m.descripcion); if (!k || no.indexOf(k) >= 0) return;
+    var e = g[k] || (g[k] = { key: k, porMes: {}, ref: m }); e.porMes[m.mes] = (e.porMes[m.mes] || 0) + (-m.monto); if (m.mes >= e.ref.mes) e.ref = m;
+  });
+  return Object.keys(g).map(function (k) { return g[k]; }).filter(function (e) {
+    var v = Object.keys(e.porMes).map(function (x) { return e.porMes[x]; }); if (v.length < 2) return false;
+    return Math.max.apply(null, v) / Math.max(1, Math.min.apply(null, v)) <= 1.25;
+  }).map(function (e) { var v = Object.keys(e.porMes).sort().map(function (x) { return e.porMes[x]; }); return { key: e.key, ref: e.ref, meses: v.length, monto: v[v.length - 1] }; });
 }
 /** Re-evalúa pagos de tarjeta cuando entra un resumen nuevo (evita contar dos veces). */
 function reconcileCardPayments() {
@@ -290,7 +353,7 @@ function parsedToRows(parsed, kind) {
     if (t.tipo && TIPOS.indexOf(t.tipo) >= 0 && t.categoria) {   // sugerido por la IA
       r.tipo = t.tipo; r.categoria = catByName(t.categoria) ? t.categoria : (t.categoria === 'Sin clasificar' ? t.categoria : ensureCatSuggestion(t.categoria, t.tipo));
       var mp = DB.map[normKey(r.descripcion)]; if (mp && mp.categoria) { r.tipo = mp.tipo; r.categoria = mp.categoria; }
-      r.flag = defaultFlag(r.categoria, r.tipo, r.cuota); r._confianza = t.confianza;
+      r.flag = (mp && mp.flag && !r.cuota) ? mp.flag : defaultFlag(r.categoria, r.tipo, r.cuota, r.descripcion); r._confianza = t.confianza;
       if (r.medio === 'Tarjeta de crédito' && r.tipo === 'Ingreso') r.tipo = 'Gasto';
     } else classify(r, ctx);
     if (!r.mes) r.mes = String(r.fecha).slice(0, 7);
@@ -550,7 +613,7 @@ function movsFromIntent(mv, origen) {
     var cuota = n > 1 ? (i + 1) + '/' + n : '';
     out.push({
       id: uid(), fecha: fecha, mes: addMonths(fecha.slice(0, 7), i), descripcion: mv.descripcion || cat, monto: Math.round(sign * abs / n * 100) / 100, usd: 0, tipo: tipo, categoria: cat,
-      flag: defaultFlag(cat, tipo, cuota), medio: mv.medio || '', cuenta: '', cuota: cuota, origen: origen || 'chat', estado: 'activo', nota: ''
+      flag: defaultFlag(cat, tipo, cuota, mv.descripcion || cat), medio: mv.medio || '', cuenta: '', cuota: cuota, origen: origen || 'chat', estado: 'activo', nota: ''
     });
   }
   return out;
