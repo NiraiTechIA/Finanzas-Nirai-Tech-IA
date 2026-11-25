@@ -43,6 +43,16 @@ let pass = 0; const ok = n => { pass++; console.log('  ✓', n); };
   await tab(pl, 'importar'); await pl.setInputFiles('[data-file="import"]', FX('mastercard.pdf'));
   await pl.waitForSelector('.imp .pv', { timeout: 15000 });
   assert(await pl.isVisible('text=Lectura genérica')); ok('PDF de banco desconocido sin IA: lectura genérica con pdf.js');
+  await tab(pl, 'inicio'); assert(await pl.isVisible('a.btn:has-text("Cómo instalarlo")'));
+  // link personal: conecta el dispositivo y limpia la URL; si es de otra cuenta, borra la copia local anterior
+  await pl.evaluate(() => { localStorage.setItem('nirai_conn', JSON.stringify({ url: 'https://script.google.com/macros/s/AKfyOTRA/exec' })); localStorage.setItem('nirai_fin_v2', JSON.stringify({ mov: [{ id: 'x1', fecha: '2026-11-01', mes: '2026-11', descripcion: 'dato de otra cuenta', monto: -1, tipo: 'Gasto', categoria: 'Sin clasificar', estado: 'activo' }] })); });
+  await pl.goto(URL + '?conectar=AKfycbTEST_123456789012345678901'); await pl.waitForSelector('#tabs button');
+  assert.strictEqual(new globalThis.URL(pl.url()).search, '', 'la URL queda limpia');
+  assert.strictEqual(await pl.evaluate(() => JSON.parse(localStorage.getItem('nirai_conn')).url), 'https://script.google.com/macros/s/AKfycbTEST_123456789012345678901/exec');
+  assert.strictEqual(await pl.evaluate(() => window.APP.DB.movs.length), 0, 'no mezcla datos de otra cuenta');
+  for (const pg of ['instalar.html', 'terminos.html', 'privacidad.html', 'arrepentimiento.html']) { await pl.goto(URL + pg); assert(await pl.isVisible('h1')); }
+  assert(await pl.isVisible('text=10 días corridos'));
+  ok('v2 pública en modo local, link personal ?conectar=, y páginas de instalación, términos, privacidad y arrepentimiento');
   await ctxL.close();
 
   // 2) conectado a Drive
@@ -184,6 +194,14 @@ let pass = 0; const ok = n => { pass++; console.log('  ✓', n); };
   await p.fill('[data-catf="nombre"][data-k="Supermercado"]', 'Súper y almacén'); await p.press('[data-catf="nombre"][data-k="Supermercado"]', 'Tab'); await waitSynced(p);
   assert(dbMovs().some(m => m.categoria === 'Súper y almacén') && !dbMovs().some(m => m.categoria === 'Supermercado'));
   ok('categorías editables (ícono y nombre) y se propagan a los movimientos');
+  assert(await p.isVisible('text=Inteligencia artificial (Gemini)'));
+  assert.strictEqual(await p.isVisible('[data-act="aiOff"]'), true, 'con clave cargada muestra la opción de quitarla');
+  await p.click('[data-act="aiOff"]'); await p.waitForSelector('form[data-form="aiKey"]');
+  assert(!env.__.props.GEMINI_API_KEY);
+  await p.fill('form[data-form="aiKey"] [name="key"]', 'AQ.clave-de-prueba'); await p.check('form[data-form="aiKey"] [name="ok"]'); await p.click('form[data-form="aiKey"] button');
+  await p.waitForSelector('[data-act="aiOff"]'); assert.strictEqual(env.__.props.GEMINI_API_KEY, 'AQ.clave-de-prueba');
+  assert(!(await p.content()).includes('AQ.clave-de-prueba'), 'la clave no queda en la página');
+  ok('IA: el cliente activa y quita su propia clave desde Ajustes (se prueba antes de guardar)');
   await p.screenshot({ path: path.join(SHOTS, 'ajustes.png'), fullPage: true });
 
   // 3) otro dispositivo (celular) ve lo mismo

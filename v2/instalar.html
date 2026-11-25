@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Instalar FINANZAS NIRAI TECH IA en tu Google Drive</title>
+<link rel="icon" href="icon.svg"><link rel="stylesheet" href="css/app.css"><link rel="stylesheet" href="css/doc.css">
+</head><body><main class="doc">
+<header class="top"><a href="./" style="text-decoration:none;font-size:22px">💹</a><b>FINANZAS <span style="color:var(--acc)">NIRAI TECH IA</span></b></header>
+<h1>Tu asistente financiero, en tu propio Google Drive</h1>
+<p>Cargá tus resúmenes de tarjeta y Mercado Pago, escribile tus gastos como a un amigo y mirá todo ordenado en el celular y la PC. <b>Tus datos quedan en tu Google Drive:</b> nadie más tiene acceso, ni siquiera nosotros.</p>
+
+<div class="box"><div class="step"><span class="num">1</span><div><h3 style="margin-top:2px">Creá tu copia</h3>
+<p id="paso1">Tocá el botón e iniciá sesión con tu cuenta de Google. Después tocá <b>«Hacer una copia»</b>.</p>
+<p><a id="btnCopia" class="btn pri" href="#" target="_blank" rel="noopener">Crear mi copia</a></p></div></div></div>
+
+<div class="box"><div class="step"><span class="num">2</span><div><h3 style="margin-top:2px">Instalá</h3>
+<p>En la planilla que se abrió, arriba en el menú: <b>💹 Finanzas → Instalar</b>. Google te pide permiso para crear tu carpeta y tu base de datos:</p>
+<ul><li>Tocá <b>Continuar</b> y elegí tu cuenta.</li>
+<li>Si aparece <i>«Google no verificó esta app»</i>: tocá <b>Configuración avanzada → Ir a FINANZAS NIRAI TECH IA</b> y después <b>Permitir</b>. Es tu propia copia, corre con tu cuenta.</li>
+<li>Si te pide activar la <b>«API de Google Apps Script»</b>: abrí el enlace que muestra, poné el interruptor en <b>Activado</b> y volvé a tocar <b>💹 Finanzas → Instalar</b>. Es una sola vez.</li></ul>
+<p class="legal-note">Si el menú 💹 Finanzas no aparece, recargá la página (F5).</p></div></div></div>
+
+<div class="box"><div class="step"><span class="num">3</span><div><h3 style="margin-top:2px">Abrí tu app</h3>
+<p>Tocá <b>«Abrir mi app»</b> e iniciá sesión con Google. Tu <b>link personal</b> también te llega por mail: abrilo una vez en el celular y queda conectado. En Chrome usá <b>⋮ → Agregar a pantalla de inicio</b>.</p>
+<p class="legal-note">Opcional: en <b>Ajustes → Inteligencia artificial</b> pegás una clave gratuita de Google AI Studio para leer fotos y PDF de cualquier banco.</p></div></div></div>
+
+<p class="legal-note">Al instalar aceptás los <a href="terminos.html">Términos y condiciones</a> y la <a href="privacidad.html">Política de privacidad</a>. ¿Dudas? Escribinos a <a id="mail" href="#"></a>.</p>
+<p><a href="./">← Volver a la app</a> · <a href="arrepentimiento.html"><b>Botón de arrepentimiento</b></a></p>
+</main>
+<script src="js/config.js"></script>
+<script>
+var C = window.NIRAI_CONFIG || {}, b = document.getElementById('btnCopia'), m = document.getElementById('mail');
+m.textContent = C.CONTACT_EMAIL || ''; m.href = 'mailto:' + (C.CONTACT_EMAIL || '');
+if (C.INSTALL_TEMPLATE_URL) b.href = C.INSTALL_TEMPLATE_URL;
+else { b.href = 'mailto:' + (C.CONTACT_EMAIL || '') + '?subject=' + encodeURIComponent('Quiero instalar FINANZAS NIRAI TECH IA'); b.textContent = 'Pedir mi instalador'; document.getElementById('paso1').textContent = 'Escribinos y te mandamos el enlace de instalación.'; }
+</script>
+</body></html>
