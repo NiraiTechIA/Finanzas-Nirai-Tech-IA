@@ -124,6 +124,7 @@ function viewInicio() {
     kpi('💳', 'Tarjeta de crédito', $0(S.tarjeta), TP.fuente === 'resumen' ? 'A pagar ' + $0(TP.total) : Object.keys(S.porCuenta).length > 1 ? Object.keys(S.porCuenta).map(function (c) { return esc(c) + ' ' + $0(S.porCuenta[c]); }).join(' · ') : 'Consumos del mes', '', 'verTarjeta') +
     kpi('📲', 'Mercado Pago', $0(S.mp), 'Gastos pagados con MP', '', 'verMP') +
     kpi('🤲', 'Préstamos y deudas', $0(S.prestamos + S.deudas), (S.prestamos ? 'Prestado ' + $0(-S.prestamos) : '') + (S.deudas ? ' · Deuda ' + $0(S.deudas) : '') || 'Sin movimientos', '', 'verPrestamos') + '</div>';
+  h += fijosCard(k);
   var catRows = Object.keys(S.porCat).map(function (c) { return [c, S.porCat[c]]; }).sort(function (a, b) { return b[1] - a[1]; });
   h += '<div class="grid g2"><div class="card"><h2>Evolución de ingresos y gastos</h2>' + chartEvolucion(keys) + '</div><div class="card"><h2>Gastos por categoría — ' + monthLabel(k) + '</h2>' + chartDonut(catRows, S.gastos) + '</div></div>';
   var medios = Object.keys(S.porMedio).map(function (m) { return [(MEDIO_ICON[m] || '·') + ' ' + esc(m), S.porMedio[m]]; }).sort(function (a, b) { return b[1] - a[1]; });
@@ -143,6 +144,17 @@ function viewInicio() {
   if (u.length || rec.length) h += '<div class="grid g2">' + (u.length ? '<div class="card"><h2>⚠️ Gastos inusuales</h2><ul class="tips">' + u.map(function (x) { return '<li>' + esc(x.texto) + '</li>'; }).join('') + '</ul></div>' : '') + (rec.length ? '<div class="card"><h2>💡 Recomendaciones</h2><ul class="tips">' + rec.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>' : '') + '</div>';
   if (!S.n && !monthKeys().length) h += '<div class="card"><h2>Primeros pasos</h2><ol class="steps"><li>Conectá tu Google Drive en <b>Ajustes</b> (una sola vez).</li><li>Subí tus resúmenes de tarjeta y de Mercado Pago en <b>Importar</b>, o dejalos en la carpeta <i>Entrada</i> de Drive.</li><li>Configurá tu sueldo en <b>Ingresos</b>.</li><li>Contale tus gastos al <b>Asistente</b>: «hoy gasté $35.000 en combustible».</li></ol></div>';
   return h;
+}
+function fijosCard(mes) {
+  var F = fijosDelMes(mes), sug = sugerenciasFijos(mes);
+  if (!F.lista.length && !sug.length) return '<div class="card"><h2>📌 Gastos fijos</h2><p class="small mut">Todavía no hay gastos marcados como fijos. Se marcan solos (servicios, seguros, obra social, suscripciones, alquiler…) o abrí un movimiento y elegí <b>Fijo</b>: la app lo recuerda para todos los meses.</p></div>';
+  var h = '<div class="card"><div class="row"><h2 style="margin:0">📌 Gastos fijos de ' + monthLabel(mes) + '</h2><span style="flex:1"></span><span class="pill ok">✅ Pagados ' + F.tot.nPagados + ' · ' + $0(F.tot.pagado) + '</span>' + (F.tot.nPendientes ? '<span class="pill warn">⏳ Faltan ' + F.tot.nPendientes + ' · ' + $0(F.tot.pendiente) + '</span>' : '') + '<span class="pill">Total del mes ' + $0(F.tot.pagado + F.tot.pendiente) + '</span></div>';
+  h += '<ul class="mlist fijos">' + F.lista.map(function (e) {
+    var amt = e.estado === 'pagado' ? (e.pagado ? $0(e.pagado) : (e.usd ? 'US$ ' + nf2.format(e.usd) : $0(0))) : '≈ ' + $0(e.esperado);
+    return '<li data-act="openMov" data-k="' + e.ref.id + '"><span class="mi">' + catIcon(e.categoria) + '</span><span class="md"><b>' + esc(e.desc) + '</b><small>' + esc(e.categoria) + (e.medio ? ' · ' + MEDIO_ICON[e.medio] + ' ' + esc(e.medio) + (e.cuenta && e.medio === 'Tarjeta de crédito' ? ' ' + esc(e.cuenta) : '') : '') + (e.estado === 'pendiente' ? ' · último: ' + monthShort(e.mesAnt) : '') + '</small></span><span class="pill ' + (e.estado === 'pagado' ? 'ok' : 'warn') + '">' + (e.estado === 'pagado' ? '✅ pagado' : '⏳ pendiente') + '</span><span class="n">' + amt + '</span><button class="btn ghost small" data-act="fijoNo" data-k="' + e.ref.id + '" title="Ya no es un gasto fijo">✕</button></li>';
+  }).join('') + '</ul>';
+  if (sug.length) h += '<div class="mt small"><b>¿Estos también son fijos?</b> Se repiten todos los meses con un importe parecido:</div><ul class="mlist">' + sug.slice(0, 6).map(function (s) { return '<li><span class="mi">' + catIcon(s.ref.categoria) + '</span><span class="md"><b>' + esc(s.ref.descripcion) + '</b><small>' + s.meses + ' meses seguidos · ' + esc(s.ref.categoria) + '</small></span><span class="n">' + $0(s.monto) + '</span><button class="btn small pri" data-act="fijoSi" data-k="' + s.ref.id + '">Es fijo</button><button class="btn small ghost" data-act="fijoNo" data-k="' + s.ref.id + '">No</button></li>'; }).join('') + '</ul>';
+  return h + '<p class="small mut">Los fijos se reconocen por categoría (servicios, seguros, suscripciones…), por palabras como «obra social» o «seguro» (Ajustes) y por lo que marques vos. Lo que marcás se aplica a todos los meses.</p></div>';
 }
 function movLi(m) { return '<li data-act="openMov" data-k="' + m.id + '"><span class="mi">' + catIcon(m.categoria) + '</span><span class="md"><b>' + esc(m.descripcion) + '</b><small>' + fmtDate(m.fecha) + ' · ' + esc(m.categoria) + (m.medio ? ' · ' + MEDIO_ICON[m.medio] + ' ' + esc(m.medio) : '') + '</small></span><span class="n ' + (m.monto < 0 ? 'neg' : 'pos') + '">' + $0(m.monto) + '</span></li>'; }
 
@@ -228,7 +240,7 @@ async function handleChat(text) {
     (group.length ? group : [target]).forEach(function (m) {
       if (ch.monto) { var sign = m.monto < 0 ? -1 : 1, n = group.length || 1; m.monto = sign * Math.abs(ch.monto) / n; }
       if (ch.descripcion) m.descripcion = ch.descripcion;
-      if (ch.categoria) { m.categoria = catByName(ch.categoria) ? ch.categoria : ensureCat(ch.categoria, m.tipo); m.flag = defaultFlag(m.categoria, m.tipo, m.cuota); }
+      if (ch.categoria) { m.categoria = catByName(ch.categoria) ? ch.categoria : ensureCat(ch.categoria, m.tipo); m.flag = defaultFlag(m.categoria, m.tipo, m.cuota, m.descripcion); }
       if (ch.fecha) m.fecha = ch.fecha;
       if (ch.medio && MEDIOS.indexOf(ch.medio) >= 0) m.medio = ch.medio;
       m.nota = (m.nota ? m.nota + ' · ' : '') + 'Corregido por el asistente'; putMov(m);
@@ -347,6 +359,7 @@ function filteredMovs() {
     if (f.tipo && m.tipo !== f.tipo) return false;
     if (f.cat && m.categoria !== f.cat) return false;
     if (f.medio && (m.medio || 'Sin indicar') !== f.medio) return false;
+    if (f.flag && m.flag !== f.flag) return false;
     if (q && norm(m.descripcion + ' ' + m.categoria + ' ' + m.cuenta + ' ' + m.nota).indexOf(q) < 0) return false;
     return true;
   }).sort(function (a, b) { return String(b.fecha).localeCompare(String(a.fecha)) || String(b.creado).localeCompare(String(a.creado)); });
@@ -362,11 +375,11 @@ function viewMovimientos() {
     '<div class="field"><label>Medio de pago</label><select data-flt="medio"><option value="">Todos</option>' + MEDIOS.filter(Boolean).concat(['Sin indicar']).map(function (m) { return '<option' + (m === f.medio ? ' selected' : '') + '>' + m + '</option>'; }).join('') + '</select></div>' +
     '<div class="field" style="flex:1;min-width:160px"><label>Buscar</label><input type="search" data-flt="q" value="' + esc(f.q) + '" placeholder="Comercio, persona, nota…"></div>' +
     '<div class="field"><label>&nbsp;</label><button class="btn ghost" data-act="fltClear">Limpiar</button></div></div>' +
-    '<div class="chips mt"><button class="chip' + (f.tipo === 'Ingreso' ? ' on' : '') + '" data-act="fltTipo" data-k="Ingreso">⬆️ Ingresos</button><button class="chip' + (f.tipo === 'Gasto' ? ' on' : '') + '" data-act="fltTipo" data-k="Gasto">⬇️ Gastos</button><button class="chip' + (f.tipo === 'Préstamo' ? ' on' : '') + '" data-act="fltTipo" data-k="Préstamo">🤲 Préstamos</button><button class="chip' + (f.tipo === 'Deuda' ? ' on' : '') + '" data-act="fltTipo" data-k="Deuda">📉 Deudas</button><button class="chip' + (f.tipo === 'Interno' ? ' on' : '') + '" data-act="fltTipo" data-k="Interno">🔁 Internos</button><button class="chip' + (f.cat === 'Sin clasificar' ? ' on' : '') + '" data-act="verSinClasificar">❓ Sin clasificar</button></div>' +
+    '<div class="chips mt"><button class="chip' + (f.tipo === 'Ingreso' ? ' on' : '') + '" data-act="fltTipo" data-k="Ingreso">⬆️ Ingresos</button><button class="chip' + (f.tipo === 'Gasto' ? ' on' : '') + '" data-act="fltTipo" data-k="Gasto">⬇️ Gastos</button><button class="chip' + (f.tipo === 'Préstamo' ? ' on' : '') + '" data-act="fltTipo" data-k="Préstamo">🤲 Préstamos</button><button class="chip' + (f.tipo === 'Deuda' ? ' on' : '') + '" data-act="fltTipo" data-k="Deuda">📉 Deudas</button><button class="chip' + (f.tipo === 'Interno' ? ' on' : '') + '" data-act="fltTipo" data-k="Interno">🔁 Internos</button><button class="chip' + (f.flag === 'Fijo' ? ' on' : '') + '" data-act="fltFlag" data-k="Fijo">📌 Fijos</button><button class="chip' + (f.flag === 'Cuota' ? ' on' : '') + '" data-act="fltFlag" data-k="Cuota">🔢 Cuotas</button><button class="chip' + (f.cat === 'Sin clasificar' ? ' on' : '') + '" data-act="verSinClasificar">❓ Sin clasificar</button></div>' +
     '<p class="small mut">' + list.length + ' movimientos · Ingresos ' + $0(ing) + ' · Gastos ' + $0(gas) + ' · Balance ' + $0(ing - gas) + '</p>';
   var shown = list.slice(0, UI.fLimit || 300);
   h += '<div class="tablewrap tall"><table class="movs"><thead><tr><th></th><th>Fecha</th><th>Descripción</th><th>Categoría</th><th>Medio</th><th class="n">Monto</th></tr></thead><tbody>' + (shown.map(function (m) {
-    return '<tr data-act="openMov" data-k="' + m.id + '" class="click"><td class="ic">' + catIcon(m.categoria) + '</td><td class="small nowrap">' + fmtDate(m.fecha) + '</td><td>' + esc(m.descripcion) + (m.cuota ? ' <span class="pill warn">' + m.cuota + '</span>' : '') + (m.tipo !== 'Gasto' && m.tipo !== 'Ingreso' ? ' <span class="pill">' + TIPO_ICON[m.tipo] + ' ' + m.tipo + '</span>' : '') + '<br><small class="mut">' + ({ chat: '💬 asistente', manual: '✍️ manual', archivo: '📄 ' + esc(m.cuenta || 'archivo'), automatico: '🔄 automático', migracion: '🗂️ versión anterior' }[m.origen] || esc(m.origen || '')) + '</small></td><td class="small">' + esc(m.categoria) + '</td><td class="small">' + (m.medio ? MEDIO_ICON[m.medio] + ' ' + esc(m.medio) : '<span class="mut">—</span>') + '</td><td class="n ' + (m.monto < 0 ? 'neg' : 'pos') + '">' + $2(m.monto) + '</td></tr>';
+    return '<tr data-act="openMov" data-k="' + m.id + '" class="click"><td class="ic">' + catIcon(m.categoria) + '</td><td class="small nowrap">' + fmtDate(m.fecha) + '</td><td>' + esc(m.descripcion) + (m.cuota ? ' <span class="pill warn">' + m.cuota + '</span>' : '') + (m.flag === 'Fijo' ? ' <span class="pill ok">📌 Fijo</span>' : '') + (m.tipo !== 'Gasto' && m.tipo !== 'Ingreso' ? ' <span class="pill">' + TIPO_ICON[m.tipo] + ' ' + m.tipo + '</span>' : '') + '<br><small class="mut">' + ({ chat: '💬 asistente', manual: '✍️ manual', archivo: '📄 ' + esc(m.cuenta || 'archivo'), automatico: '🔄 automático', migracion: '🗂️ versión anterior' }[m.origen] || esc(m.origen || '')) + '</small></td><td class="small">' + esc(m.categoria) + '</td><td class="small">' + (m.medio ? MEDIO_ICON[m.medio] + ' ' + esc(m.medio) : '<span class="mut">—</span>') + '</td><td class="n ' + (m.monto < 0 ? 'neg' : 'pos') + '">' + $2(m.monto) + '</td></tr>';
   }).join('') || '<tr><td colspan="6" class="mut">No hay movimientos con estos filtros.</td></tr>') + '</tbody></table></div>' + (list.length > shown.length ? '<button class="btn mt" data-act="moreMovs">Ver más (' + (list.length - shown.length) + ')</button>' : '') + '</div>';
   var pd = activeMovs().filter(function (m) { return m.tipo === 'Préstamo' || m.tipo === 'Deuda'; });
   if (pd.length) {
@@ -399,12 +412,13 @@ function saveMovForm(form) {
   var d = {}; new FormData(form).forEach(function (v, k) { d[k] = v; });
   var monto = Math.abs(parseNum(d.monto)); if (!monto || !d.descripcion) { toast('Completá descripción e importe', true); return; }
   var m = d.id ? Object.assign({}, movById(d.id)) : { id: uid(), origen: 'manual', estado: 'activo', usd: 0, opId: '', importId: '', archivoId: '' };
-  var prevCat = m.categoria, prevTipo = m.tipo;
+  var prevCat = m.categoria, prevTipo = m.tipo, prevFlag = m.flag;
   m.fecha = d.fecha; m.mes = d.mes || d.fecha.slice(0, 7); m.descripcion = d.descripcion.trim(); m.monto = (d.sentido === 'entrada' ? 1 : -1) * monto;
   m.tipo = d.tipo; m.categoria = d.categoria === '__new__' ? 'Sin clasificar' : d.categoria; m.flag = m.tipo === 'Gasto' ? (d.flag || defaultFlag(m.categoria, m.tipo, d.cuota)) : '';
   m.medio = d.medio; m.cuenta = d.cuenta; m.cuota = d.cuota; m.nota = d.nota;
   putMov(m);
   var n = (prevCat !== m.categoria || prevTipo !== m.tipo) ? learnFrom(m) : 0;
+  if (d.id && m.tipo === 'Gasto' && !m.cuota && prevFlag !== m.flag && (m.flag === 'Fijo' || prevFlag === 'Fijo')) n += setFlagForKey(m, m.flag === 'Fijo' ? 'Fijo' : 'Variable');
   closeModal(); toast('Guardado' + (n ? ' · apliqué lo mismo a ' + n + ' movimiento(s) iguales' : '')); render();
 }
 
@@ -465,6 +479,7 @@ function viewAjustes() {
   h += '</div>';
   var f = function (id, l, v, hint, type) { return '<div class="field"><label>' + l + '</label><input type="' + (type || 'text') + '"' + (type ? '' : ' class="money" inputmode="decimal"') + ' data-cfg="' + id + '" value="' + (type ? esc(v || '') : nf0.format(v || 0)) + '">' + (hint ? '<span class="small mut">' + hint + '</span>' : '') + '</div>'; };
   h += '<div class="card"><h2>🎯 Valores de referencia</h2><div class="row">' + f('saldoInicial', 'Saldo de partida (todas tus cuentas + efectivo)', cfg.saldoInicial) + f('saldoInicialFecha', 'A la fecha', cfg.saldoInicialFecha, 'Base del «Dinero disponible»', 'date') + f('ahorroMeta', 'Meta de ahorro mensual', cfg.ahorroMeta) + f('nProm', 'Meses para promediar', cfg.nProm) + f('mpReservado', 'Colchón reservado en MP', cfg.mpReservado) + f('usd', 'Ahorros en dólares (US$)', cfg.usd) + f('tc', 'Tipo de cambio', cfg.tc) + f('colchonMeses', 'Meses de colchón deseados', cfg.colchonMeses) + '</div>' +
+    '<div class="field mt"><label>Palabras que identifican gastos fijos (aunque la categoría sea variable)</label><input type="text" data-cfg="fijosPalabras" value="' + esc(cfg.fijosPalabras == null ? DEFAULT_FIJOS : cfg.fijosPalabras) + '"><span class="small mut">Ej: «obra social» dentro de Salud. También podés abrir cualquier movimiento y marcarlo como Fijo.</span></div>' +
     '<div class="field mt"><label>Tus nombres como titular (para detectar transferencias entre tus cuentas)</label><input type="text" data-cfg="propios" value="' + esc((cfg.propios || []).join(', ')) + '" placeholder="Ej: Mauro Maejo, Mauro Antonio Maejo Puga"></div></div>';
   h += '<div class="card"><h2>🏷️ Categorías e íconos</h2><p class="small mut">Editá el ícono (cualquier emoji), el nombre y las palabras clave que usa la clasificación automática. Si renombrás, se actualizan todos los movimientos.</p><div class="tablewrap"><table class="cats"><thead><tr><th>Ícono</th><th>Nombre</th><th>Tipo</th><th>Palabras clave (separadas por coma)</th><th></th></tr></thead><tbody>' +
     DB.cat.slice().sort(function (a, b) { return (a.tipo === b.tipo ? 0 : TIPOS.indexOf(a.tipo) - TIPOS.indexOf(b.tipo)) || a.orden - b.orden; }).map(function (ct) { return '<tr class="' + (ct.estado === 'oculto' ? 'off' : '') + '"><td><input type="text" data-catf="icono" data-k="' + esc(ct.id) + '" value="' + esc(ct.icono) + '" class="emoji" aria-label="Ícono"></td><td><input type="text" data-catf="nombre" data-k="' + esc(ct.id) + '" value="' + esc(ct.nombre) + '"></td><td><select data-catf="tipo" data-k="' + esc(ct.id) + '">' + opt(TIPOS, ct.tipo) + '</select></td><td><input type="text" data-catf="palabras" data-k="' + esc(ct.id) + '" value="' + esc(ct.palabras || '') + '" style="width:100%"></td><td><button class="btn ghost small" data-act="catToggle" data-k="' + esc(ct.id) + '">' + (ct.estado === 'oculto' ? 'Mostrar' : 'Ocultar') + '</button></td></tr>'; }).join('') +
@@ -492,6 +507,8 @@ document.addEventListener('click', function (e) {
     case 'verPrestamos': UI.f = { anio: '', mes: '', tipo: 'Préstamo', cat: '', medio: '', q: '' }; goTab('movimientos'); break;
     case 'verSinClasificar': UI.f = { anio: '', mes: '', tipo: '', cat: 'Sin clasificar', medio: '', q: '' }; goTab('movimientos'); break;
     case 'fltClear': UI.f = { anio: '', mes: '', tipo: '', cat: '', medio: '', q: '' }; render(); break;
+    case 'fltFlag': UI.f.flag = UI.f.flag === k ? '' : k; render(); break;
+    case 'fijoSi': case 'fijoNo': { e.stopPropagation(); var fm = movById(k); if (!fm) break; var nfx = setFlagForKey(fm, a === 'fijoSi' ? 'Fijo' : 'Variable'); toast((a === 'fijoSi' ? '📌 «' + fm.descripcion + '» es fijo' : '«' + fm.descripcion + '» ya no es fijo') + (nfx ? ' · ' + nfx + ' movimiento(s) actualizados' : '')); render(); break; }
     case 'fltTipo': UI.f.tipo = UI.f.tipo === k ? '' : k; if (UI.f.cat === 'Sin clasificar') UI.f.cat = ''; render(); break;
     case 'moreMovs': UI.fLimit = (UI.fLimit || 300) + 300; render(); break;
     case 'openMov': { var m = movById(k); if (m) openModal(movForm(m)); break; }
@@ -501,7 +518,7 @@ document.addEventListener('click', function (e) {
     case 'chatSug': sendChat(k); break;
     case 'chatClear': UI.chat = []; UI.chatCtx = null; render(); break;
     case 'chatUndo': { var ids = k.split(','), n = 0; ids.forEach(function (id) { var x = movById(id); if (x && x.estado === 'activo') { x.estado = 'borrado'; putMov(x); n++; } }); botSay(n ? '↩️ Listo, lo borré.' : 'Ya estaba borrado.'); render(); break; }
-    case 'chatSetCat': { var v = b.dataset.v; k.split(',').forEach(function (id) { var x = movById(id); if (x) { x.categoria = v; x.flag = defaultFlag(v, x.tipo, x.cuota); putMov(x); } }); botSay('🏷️ Lo puse en ' + catIcon(v) + ' ' + v + '.'); render(); break; }
+    case 'chatSetCat': { var v = b.dataset.v; k.split(',').forEach(function (id) { var x = movById(id); if (x) { x.categoria = v; x.flag = defaultFlag(v, x.tipo, x.cuota, x.descripcion); putMov(x); } }); botSay('🏷️ Lo puse en ' + catIcon(v) + ' ' + v + '.'); render(); break; }
     case 'chatSetMedio': { var md = b.dataset.v; k.split(',').forEach(function (id) { var x = movById(id); if (x) { x.medio = md; putMov(x); } }); botSay(MEDIO_ICON[md] + ' Medio de pago: ' + md + '.'); render(); break; }
     case 'recOk': case 'recOtro': {
       var p = recurrentesPendientes().find(function (x) { return x.rec.id === k; }); if (!p) break;
@@ -562,7 +579,7 @@ document.addEventListener('change', function (e) {
   if (t.name === 'categoria' && t.value === '__new__' && t.closest('form[data-form="mov"]')) { var nv = askNewCat(t, t.form.tipo.value); var sel = t; if (nv) { sel.insertAdjacentHTML('afterbegin', '<option value="' + esc(nv) + '">' + catIcon(nv) + ' ' + esc(nv) + '</option>'); sel.value = nv; } else sel.selectedIndex = 0; return; }
   if (ds.mf === 'tipo') { var form = t.form, tipo = t.value, catSel = form.categoria, cur = catSel.value; catSel.innerHTML = catOptions(tipo === 'Ingreso' && catByName(cur) && catByName(cur).tipo !== 'Ingreso' ? 'Otros ingresos' : tipo === 'Interno' ? 'Transferencias propias' : tipo === 'Préstamo' ? 'Préstamos' : tipo === 'Deuda' ? 'Deudas' : cur, tipo); form.sentido.value = tipo === 'Ingreso' ? 'entrada' : form.sentido.value; return; }
   if (ds.rec) { var recs = (DB.cfg.recurrentes || []).map(function (r) { if (r.id !== ds.k) return r; var o = Object.assign({}, r); o[ds.rec] = ds.rec === 'auto' ? t.checked : ds.rec === 'monto' ? parseNum(t.value) : ds.rec === 'dia' ? Math.max(1, Math.min(31, +t.value || 1)) : t.value; return o; }); setCfg('recurrentes', recs); render(); return; }
-  if (ds.cfg) { var key2 = ds.cfg, val = key2 === 'propios' ? t.value.split(',').map(function (x) { return x.trim(); }).filter(Boolean) : key2 === 'saldoInicialFecha' ? t.value : parseNum(t.value); setCfg(key2, val); render(); return; }
+  if (ds.cfg) { var key2 = ds.cfg, val = key2 === 'propios' ? t.value.split(',').map(function (x) { return x.trim(); }).filter(Boolean) : key2 === 'saldoInicialFecha' || key2 === 'fijosPalabras' ? t.value : parseNum(t.value); setCfg(key2, val); if (key2 === 'fijosPalabras') { var nr = recalcFijos(); if (nr) toast(nr + ' movimiento(s) marcados como fijos'); } render(); return; }
   if (ds.proj) { var pj = Object.assign({}, DB.cfg.proyeccion || {}); pj[UI.month] = Object.assign({}, pj[UI.month] || {}); pj[UI.month][ds.proj] = parseNum(t.value); setCfg('proyeccion', pj); render(); return; }
   if (ds.catf) { var ct = DB.cat.find(function (x) { return x.id === ds.k; }); if (!ct) return; if (ds.catf === 'nombre') { var nn = t.value.trim(); if (!nn) { render(); return; } if (catByName(nn) && catByName(nn) !== ct) { toast('Ya existe una categoría con ese nombre', true); render(); return; } var cnt = renameCat(ct.id, nn); toast('Renombrada' + (cnt ? ' · ' + cnt + ' movimientos actualizados' : '')); } else { ct[ds.catf] = t.value; putCat(ct); } render(); return; }
 });
@@ -584,5 +601,5 @@ document.addEventListener('focusout', function () { setTimeout(function () { if 
 })();
 
 /* ============================ Arranque ============================ */
-loadLocal(); loadUI(); autoRecurrentes(); render(); startSync();
+loadLocal(); loadUI(); autoRecurrentes(); if (!isConfigured()) unaVez(); render(); startSync();
 window.APP = { DB: DB, UI: UI, SYNC: SYNC, summarize: summarize, sendChat: sendChat, handleFiles: handleFiles, render: render };

@@ -128,3 +128,4 @@ label.sw{display:inline-flex;gap:5px;align-items:center;cursor:pointer}
 }
 @media (max-width:380px){.g4{grid-template-columns:1fr}}
 .bigstat{font-size:44px;font-weight:700;margin:16px 0 4px}
+.fijos li{gap:8px}.fijos .pill{flex:none}

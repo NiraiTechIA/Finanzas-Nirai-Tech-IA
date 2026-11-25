@@ -109,7 +109,7 @@ function pull() {
     SYNC.queue.forEach(function (q) { apply[q.t] && apply[q.t](q.row); });
     SYNC.ai = !!d.ai; SYNC.links = d.links || {}; SYNC.status = 'ok'; SYNC.lastSync = new Date(); SYNC.error = '';
     var t = getTok(); SYNC.user = t ? { email: t.email, name: t.name } : null;
-    autoRecurrentes();
+    autoRecurrentes(); unaVez();
     saveLocal(); UI.refresh(); scheduleFlush(300);
     return true;
   }).catch(function (e) { SYNC.error = e.message; SYNC.status = /AUTH/.test(e.message) ? 'login' : 'offline'; UI.refreshStatus(); return false; });
@@ -120,4 +120,9 @@ function startSync() {
   setInterval(function () { if (document.visibilityState === 'visible' && isConfigured() && tokenValid() && !UI.busy()) pull(); }, 90000);
   document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && isConfigured() && tokenValid() && !UI.busy()) pull(); });
   window.addEventListener('online', function () { scheduleFlush(500); });
+}
+
+/** Ajustes que se aplican una sola vez sobre los datos existentes (después de una actualización de la app). */
+function unaVez() {
+  if (!DB.cfg.fijosAplicados) { recalcFijos(); setCfg('fijosAplicados', true); }
 }

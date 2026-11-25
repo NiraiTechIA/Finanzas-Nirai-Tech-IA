@@ -90,4 +90,37 @@ t('inusuales y períodos', () => {
   const u = C.inusuales('2026-11'); assert(u.some(x => x.tipo === 'categoria' && x.categoria === 'Supermercado')); assert(u.some(x => x.id === 'big'));
   const tri = C.periodRows('trim'); assert(tri.find(r => r.g === '2026 · T4'));
 });
+t('gastos fijos: obra social y seguro por tarjeta, servicios por MP', () => {
+  const rows = C.parsedToRows({ meta: { monthKey: '2026-10', card: { nombre: 'Visa ···7679' } }, txs: [{ fecha: '2026-10-05', desc: 'OSDE 210 CUOTA', monto: -95000 }, { fecha: '2026-10-23', desc: 'Barbuss risk seguro', monto: -228438.68 }, { fecha: '2026-10-08', desc: 'Saldo a favor del resumen anterior', monto: 5907.2 }, { fecha: '2026-10-12', desc: 'FARMACITY', monto: -9000 }] }, 'tarjeta');
+  assert.strictEqual(rows[0].categoria, 'Salud'); assert.strictEqual(rows[0].flag, 'Fijo', 'obra social es fija aunque Salud sea variable');
+  assert.strictEqual(rows[1].flag, 'Fijo'); assert.strictEqual(rows[2].tipo, 'Interno', 'saldo a favor no es ingreso'); assert.strictEqual(rows[3].flag, 'Variable');
+  const mp = C.parsedToRows({ meta: {}, txs: [{ fecha: '2026-10-03', desc: 'Pago de servicio Metrogas', monto: -41119.33, opId: 'm1' }] }, 'mercadopago');
+  assert.strictEqual(mp[0].categoria, 'Servicios'); assert.strictEqual(mp[0].flag, 'Fijo');
+  C.commitImport({ fuente: 'tarjeta', mes: '2026-10', cuenta: 'Visa ···7679', archivo: 'visa-oct.pdf' }, C.buildPreview(rows));
+  C.commitImport({ fuente: 'mercadopago', mes: '2026-10', archivo: 'mp-oct.pdf' }, C.buildPreview(mp));
+});
+t('gastos fijos del mes: pagados y pendientes según los meses anteriores', () => {
+  let F = C.fijosDelMes('2026-11');
+  const osde = F.lista.find(e => /osde/i.test(e.desc)); assert(osde && osde.estado === 'pendiente' && osde.esperado === 95000);
+  C.putMov({ id: 'osde-nov', fecha: '2026-11-05', mes: '2026-11', descripcion: 'OSDE 210 CUOTA', monto: -98000, tipo: 'Gasto', categoria: 'Salud', flag: 'Fijo', medio: 'Tarjeta de crédito', estado: 'activo' });
+  F = C.fijosDelMes('2026-11'); const o2 = F.lista.find(e => /osde/i.test(e.desc)); assert.strictEqual(o2.estado, 'pagado'); assert.strictEqual(o2.pagado, 98000);
+  assert(F.tot.nPendientes >= 2 && F.tot.pendiente >= 228438 + 41119);
+});
+t('marcar un comercio como fijo se aplica a todos los meses y a los próximos', () => {
+  ['2026-09', '2026-10'].forEach(k => C.putMov({ id: 'gym' + k, fecha: k + '-02', mes: k, descripcion: 'SMART FIT', monto: -30000, tipo: 'Gasto', categoria: 'Entretenimiento', flag: 'Variable', medio: 'Débito', origen: 'archivo', estado: 'activo' }));
+  const n = C.setFlagForKey(C.movById('gym2026-10'), 'Fijo'); assert.strictEqual(n, 2);
+  const nuevo = C.parsedToRows({ meta: { monthKey: '2026-11', card: { nombre: 'Visa' } }, txs: [{ fecha: '2026-11-02', desc: 'SMART FIT', monto: -32000 }] }, 'tarjeta');
+  assert.strictEqual(nuevo[0].flag, 'Fijo', 'el mes siguiente ya entra como fijo');
+  C.setFlagForKey(C.movById('gym2026-10'), 'Variable'); assert.strictEqual(C.movById('gym2026-09').flag, 'Variable');
+  assert.strictEqual(C.parsedToRows({ meta: { monthKey: '2026-11', card: { nombre: 'Visa' } }, txs: [{ fecha: '2026-11-02', desc: 'SMART FIT', monto: -32000 }] }, 'tarjeta')[0].flag, 'Variable');
+});
+t('sugiere como fijo lo que se repite con importe parecido', () => {
+  ['2026-09', '2026-10'].forEach(k => C.putMov({ id: 'prof' + k, fecha: k + '-10', mes: k, descripcion: 'Transferencia enviada Profesora Ingles', monto: -40000, tipo: 'Gasto', categoria: 'Educación', flag: 'Variable', medio: 'Mercado Pago', estado: 'activo' }));
+  assert(C.sugerenciasFijos('2026-10').some(s => /profesora/i.test(s.ref.descripcion)));
+  assert(!C.sugerenciasFijos('2026-10').some(s => /COTO/i.test(s.ref.descripcion)), 'no sugiere el supermercado');
+});
+t('cambiar las palabras de fijos recalcula los movimientos existentes', () => {
+  C.putMov({ id: 'pil', fecha: '2026-10-15', mes: '2026-10', descripcion: 'Pilates Lomas', monto: -25000, tipo: 'Gasto', categoria: 'Salud', flag: 'Variable', medio: 'Efectivo', estado: 'activo' });
+  C.setCfg('fijosPalabras', C.DB.cfg.fijosPalabras + ',pilates'); assert(C.recalcFijos() >= 1); assert.strictEqual(C.movById('pil').flag, 'Fijo');
+});
 console.log(`\n${pass} pruebas del núcleo OK`);
