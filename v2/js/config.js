@@ -4,7 +4,7 @@
 window.NIRAI_CONFIG = {
   BACKEND_URL: '',   // vacío a propósito: la app pública arranca en modo local
   GOOGLE_CLIENT_ID: '288188064237-aatf9mti4ioim04pup4m4ok9abdp16ub.apps.googleusercontent.com',
-  INSTALL_TEMPLATE_URL: '',   // link de la planilla instaladora terminado en /copy
+  INSTALL_TEMPLATE_URL: 'https://docs.google.com/spreadsheets/d/1IuVbIOhaIScqmFDIfrrpQxj7dsqWvm4T5vnu_vtOJ8U/copy',   // link de la planilla instaladora terminado en /copy
   CONTACT_EMAIL: 'mauromaejo@gmail.com',
   BRAND: 'Nirai Tech IA'
 };
