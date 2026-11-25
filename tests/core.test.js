@@ -123,4 +123,9 @@ t('cambiar las palabras de fijos recalcula los movimientos existentes', () => {
   C.putMov({ id: 'pil', fecha: '2026-10-15', mes: '2026-10', descripcion: 'Pilates Lomas', monto: -25000, tipo: 'Gasto', categoria: 'Salud', flag: 'Variable', medio: 'Efectivo', estado: 'activo' });
   C.setCfg('fijosPalabras', C.DB.cfg.fijosPalabras + ',pilates'); assert(C.recalcFijos() >= 1); assert.strictEqual(C.movById('pil').flag, 'Fijo');
 });
+t('proyección: cuotas del próximo resumen aunque el mes elegido no tenga resumen', () => {
+  C.putImp({ id: 'imp-cq', fuente: 'tarjeta', mes: '2026-10', cuenta: 'Visa ···7679', estado: 'activo', meta: { cuotasProx: [{ mes: 'Diciembre 2026', monto: 209157.07 }, { mes: 'Enero 2027', monto: 49999.91 }] } });
+  assert.strictEqual(C.projection('2026-10').cuotas, 209157.07);
+  assert.strictEqual(C.projection('2026-11').cuotas, 49999.91);
+});
 console.log(`\n${pass} pruebas del núcleo OK`);
