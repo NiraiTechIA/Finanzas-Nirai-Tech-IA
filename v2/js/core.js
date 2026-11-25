@@ -429,10 +429,14 @@ function projection(mes) {
   var c = DB.cfg, keys = monthKeys().filter(function (k) { return k <= mes; }), last = keys.slice(-Math.max(1, c.nProm || 3)), sums = last.map(summarize), S = summarize(mes);
   var avg = function (f) { return sums.length ? sums.reduce(function (a, s) { return a + f(s); }, 0) / sums.length : 0; };
   var next = addMonths(mes, 1), cuotasNext = 0;
-  DB.imp.forEach(function (i) { if (i.estado !== 'borrado' && i.mes === mes && i.meta && i.meta.cuotasProx && i.meta.cuotasProx[0]) cuotasNext += Number(i.meta.cuotasProx[0].monto) || 0; });
+  // cuotas del próximo resumen de cada tarjeta, según el último resumen cargado (hasta este mes)
+  var ultimo = {};
+  DB.imp.forEach(function (i) { if (i.estado === 'borrado' || i.fuente !== 'tarjeta' || !i.mes || i.mes > mes || !(i.meta && i.meta.cuotasProx && i.meta.cuotasProx.length)) return; var c = i.cuenta || 'tarjeta'; if (!ultimo[c] || i.mes > ultimo[c].mes) ultimo[c] = i; });
+  Object.keys(ultimo).forEach(function (c) { var i = ultimo[c], p = mes.split('-').map(Number), q = i.mes.split('-').map(Number), idx = (p[0] - q[0]) * 12 + (p[1] - q[1]), e = i.meta.cuotasProx[idx]; if (e) cuotasNext += Number(e.monto) || 0; });
   if (!cuotasNext) cuotasNext = S.porFlag.Cuota;
   var rec = (c.recurrentes || []).reduce(function (a, r) { return a + (Number(r.monto) || 0); }, 0);
-  var d = { fijos: S.porFlag.Fijo, cuotas: cuotasNext, variables: avg(function (s) { return s.porFlag.Variable; }), unicos: 0, negocio: avg(function (s) { return s.negocioNeto; }), sueldo: rec || avg(function (s) { return s.porCatIng['Sueldo'] || 0; }), otros: 0 };
+  var F = fijosDelMes(mes), fijosConocidos = F.tot.pagado + F.tot.pendiente;   // fijos ya pagados + los que faltan según meses anteriores
+  var d = { fijos: Math.max(S.porFlag.Fijo, fijosConocidos), cuotas: cuotasNext, variables: avg(function (s) { return s.porFlag.Variable; }), unicos: 0, negocio: avg(function (s) { return s.negocioNeto; }), sueldo: rec || avg(function (s) { return s.porCatIng['Sueldo'] || 0; }), otros: 0 };
   var o = (c.proyeccion && c.proyeccion[mes]) || {}, v = {};
   Object.keys(d).forEach(function (k) { v[k] = o[k] != null ? o[k] : d[k]; });
   v.ingresos = v.sueldo + v.negocio + v.otros; v.gastos = v.fijos + v.cuotas + v.variables + v.unicos;
@@ -441,7 +445,7 @@ function projection(mes) {
   var piso = v.fijos + v.cuotas, techo = piso + v.variables, liq = (Number(c.mpReservado) || 0) + (Number(c.usd) || 0) * (Number(c.tc) || 0);
   v.indep = { piso: piso, techo: techo, liq: liq, covPiso: piso > 0 ? v.negocio / piso : 0, covTecho: techo > 0 ? v.negocio / techo : 0, defPiso: Math.max(0, piso - v.negocio), defTecho: Math.max(0, techo - v.negocio) };
   v.indep.mesesPiso = v.indep.defPiso > 0 ? liq / v.indep.defPiso : Infinity; v.indep.mesesTecho = v.indep.defTecho > 0 ? liq / v.indep.defTecho : Infinity;
-  v.nMeses = sums.length; v.defaults = d; return v;
+  v.nMeses = sums.length; v.mesesBase = last; v.defaults = d; return v;
 }
 /** Gastos inusuales: categorías muy por encima de su promedio y compras individuales grandes. */
 function inusuales(mes) {
