@@ -9,7 +9,7 @@ const toBuf = bytes => Buffer.from(bytes.map(b => b & 0xff));
 function createEnv(opts = {}) {
   let n = 0; const nid = p => p + (++n).toString(36) + crypto.randomBytes(3).toString('hex');
   const files = {}, folders = {}, sheetsById = {};
-  const props = {}, cache = {}, triggers = [], logs = [];
+  const props = {}, cache = {}, triggers = [], logs = [], mails = [], active = {}, ui = { dialogs: [] };
   const myDrive = { id: 'root', name: 'Mi unidad', parent: null };
   folders.root = myDrive;
 
@@ -48,7 +48,7 @@ function createEnv(opts = {}) {
         vals.forEach((row, i) => { const R = sh.cells[r - 1 + i] = sh.cells[r - 1 + i] || []; row.forEach((v, j) => { R[c - 1 + j] = v; }); });
         return self;
       },
-      setNumberFormat: () => self, setFontWeight: () => self
+      setNumberFormat: () => self, setFontWeight: () => self, setFontSize: () => self
     };
     return self;
   }
@@ -56,15 +56,15 @@ function createEnv(opts = {}) {
     const lastRow = () => { for (let i = s.cells.length - 1; i >= 0; i--) if ((s.cells[i] || []).some(v => v !== '' && v != null)) return i + 1; return 0; };
     const lastCol = () => s.cells.reduce((a, r) => { if (!r) return a; for (let j = r.length - 1; j >= 0; j--) if (r[j] !== '' && r[j] != null) return Math.max(a, j + 1); return a; }, 0);
     return {
-      getName: () => s.name, getLastRow: lastRow, getLastColumn: lastCol, getMaxRows: () => 1000,
+      getName: () => s.name, clear: () => { s.cells = []; }, setColumnWidth: () => { }, getLastRow: lastRow, getLastColumn: lastCol, getMaxRows: () => 1000,
       getRange: (r, c, nr, nc) => Range(s, r, c, nr, nc), setFrozenRows: () => { }, clearContents: () => { s.cells = []; }, _s: s
     };
   }
   function Spreadsheet(ss) {
     return {
-      getId: () => ss.id, getUrl: () => 'https://docs.google.com/spreadsheets/d/' + ss.id,
+      getId: () => ss.id, rename: n => { ss.name = n; if (files[ss.id]) files[ss.id].name = n; }, getName: () => ss.name, getUrl: () => 'https://docs.google.com/spreadsheets/d/' + ss.id,
       getSheetByName: name => { const s = ss.sheets.find(x => x.name === name); return s ? Sheet(s) : null; },
-      insertSheet: name => { const s = { name, cells: [] }; ss.sheets.push(s); return Sheet(s); },
+      insertSheet: (name, idx) => { const s = { name, cells: [] }; if (idx === 0) ss.sheets.unshift(s); else ss.sheets.push(s); return Sheet(s); },
       getSheets: () => ss.sheets.map(Sheet), deleteSheet: sh => { ss.sheets = ss.sheets.filter(x => x !== sh._s); }
     };
   }
@@ -82,12 +82,15 @@ function createEnv(opts = {}) {
   const ctx = {
     console, JSON, Math, Date, Object, Array, String, Number, RegExp, Error,
     Logger: { log: m => logs.push(m) },
-    PropertiesService: { getScriptProperties: () => ({ getProperty: k => (k in props ? props[k] : null), setProperty: (k, v) => { props[k] = String(v); } }) },
+    PropertiesService: { getScriptProperties: () => ({ getProperty: k => (k in props ? props[k] : null), setProperty: (k, v) => { props[k] = String(v); }, deleteProperty: k => { delete props[k]; } }) },
+    MailApp: { sendEmail: o => mails.push(o) },
+    HtmlService: { createHtmlOutput: h => { const o = { html: h, setWidth: () => o, setHeight: () => o }; return o; } },
     CacheService: { getScriptCache: () => ({ get: k => cache[k] || null, put: (k, v) => { cache[k] = v; } }) },
     LockService: { getScriptLock: () => ({ waitLock: () => { }, tryLock: () => true, releaseLock: () => { } }) },
     Session: { getScriptTimeZone: () => 'America/Argentina/Buenos_Aires', getEffectiveUser: () => ({ getEmail: () => 'dueno@gmail.com' }) },
     ContentService: { MimeType: { JSON: 'json' }, createTextOutput: s => ({ setMimeType: () => ({ getContent: () => s }) }) },
     ScriptApp: {
+      getScriptId: () => 'script-123', getOAuthToken: () => 'oauth-token-test',
       getProjectTriggers: () => triggers.slice(), deleteTrigger: t => { triggers.splice(triggers.indexOf(t), 1); },
       newTrigger: fn => { const t = { fn }; const ch = { timeBased: () => ch, everyMinutes: m => { t.every = m; return ch; }, atHour: h => { t.hour = h; return ch; }, everyDays: () => ch, create: () => { triggers.push(t); return t; } }; return ch; }
     },
@@ -109,13 +112,17 @@ function createEnv(opts = {}) {
     },
     SpreadsheetApp: {
       create: name => { const id = nid('ss'); const ss = { id, name, sheets: [{ name: 'Hoja 1', cells: [] }] }; sheetsById[id] = ss; files[id] = { id, name, mime: 'application/vnd.google-apps.spreadsheet', parent: 'root', created: new Date() }; return Spreadsheet(ss); },
-      openById: id => { if (!sheetsById[id]) throw new Error('no ss'); return Spreadsheet(sheetsById[id]); }
+      openById: id => { if (!sheetsById[id]) throw new Error('no ss'); return Spreadsheet(sheetsById[id]); },
+      getActiveSpreadsheet: () => (active.id && sheetsById[active.id] ? Spreadsheet(sheetsById[active.id]) : null),
+      getUi: () => { if (!active.id) throw new Error('sin interfaz'); return { createMenu: () => { const m = { addItem: () => m, addToUi: () => { ui.menu = true; } }; return m; }, showModalDialog: (o, t) => { ui.dialogs.push(o.html); } }; }
     }
   };
   vm.createContext(ctx);
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'apps-script', 'Code.gs'), 'utf8'), ctx, { filename: 'Code.gs' });
   Object.assign(props, { OWNER_EMAIL: 'dueno@gmail.com', OAUTH_CLIENT_ID: 'cliente-test.apps.googleusercontent.com' }, opts.props || {});
-  ctx.__ = { files, folders, sheetsById, props, triggers, logs, Folder, File };
+  ctx.__ = { files, folders, sheetsById, props, triggers, logs, mails, ui, active, Folder, File };
+  // simula estar dentro de una copia de la planilla plantilla (script vinculado)
+  ctx.bindToNewSheet = name => { const ss = ctx.SpreadsheetApp.create(name || 'Copia de FINANZAS NIRAI TECH IA — Instalador'); active.id = ss.getId(); return ss; };
   ctx.post = body => JSON.parse(ctx.doPost({ postData: { contents: JSON.stringify(body) } }).getContent());
   ctx.addInboxFile = (name, mime, buf) => { const fo = Object.values(folders).find(f => f.name === 'Entrada'); return Folder(fo).createFile(Blob(buf, mime, name)).getId(); };
   return ctx;

@@ -11,16 +11,23 @@
  *     ├── Gastos/
  *     └── Reportes mensuales/       (planilla "Totales" para compartir con tu asistente)
  *
- * Propiedades del script (Configuración del proyecto → Propiedades del script):
- *   OWNER_EMAIL       tu Gmail (único usuario autorizado)
- *   OAUTH_CLIENT_ID   ID de cliente OAuth (tipo "Aplicación web") de Google Cloud
- *   GEMINI_API_KEY    clave de Google AI Studio
+ * INSTALACIÓN PARA CLIENTES (3 pasos): hacer una copia de la planilla plantilla →
+ * menú «💹 Finanzas → Instalar» → abrir el link personal que aparece (y llega por mail).
+ *
+ * Propiedades del script (las crea instalar()/setup(); se pueden editar en Configuración del proyecto):
+ *   OWNER_EMAIL       Gmail del dueño (único usuario autorizado). Se toma solo de quien instala.
+ *   OAUTH_CLIENT_ID   opcional: por defecto el de la app publicada (DEFAULT_CLIENT_ID)
+ *   GEMINI_API_KEY    opcional: se carga desde la app (Ajustes → Inteligencia artificial)
  *   GEMINI_MODEL      opcional (por defecto gemini-3.8-flash)
  *   GEMINI_FALLBACK   opcional (por defecto gemini-3.5-flash-lite)
  * Las crea/lee setup(); nunca van en el código del frontend.
  */
 
 var APP_NAME = 'FINANZAS NIRAI TECH IA';
+var BACKEND_VERSION = 3;
+var APP_URL = 'https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/v2/';
+// ID de cliente OAuth de la app publicada (es público: identifica a la app, no da acceso a nada)
+var DEFAULT_CLIENT_ID = '288188064237-aatf9mti4ioim04pup4m4ok9abdp16ub.apps.googleusercontent.com';
 var SUBFOLDERS = ['Base de datos', 'Entrada', 'Resúmenes de tarjetas', 'Comprobantes', 'Ingresos', 'Gastos', 'Reportes mensuales'];
 var KIND_FOLDER = { resumen: 'Resúmenes de tarjetas', comprobante: 'Comprobantes', ingreso: 'Ingresos', gasto: 'Gastos', reporte: 'Reportes mensuales' };
 
@@ -88,7 +95,7 @@ function cellOut_(v, col) {
 function setup() {
   var p = props_(), log = [];
   if (!prop_('OWNER_EMAIL')) p.setProperty('OWNER_EMAIL', Session.getEffectiveUser().getEmail());
-  ['OAUTH_CLIENT_ID', 'GEMINI_API_KEY'].forEach(function (k) { if (!prop_(k)) log.push('FALTA la propiedad ' + k + ' (Configuración del proyecto → Propiedades del script).'); });
+  if (!prop_('GEMINI_API_KEY')) log.push('IA sin activar (opcional): cargá tu clave de Gemini desde la app → Ajustes.');
 
   var root = getRoot_(true);
   var folders = {};
@@ -97,8 +104,7 @@ function setup() {
 
   var db = getDb_(true);
   Object.keys(TABLES).forEach(function (t) { ensureSheet_(db, t); });
-  var def = db.getSheetByName('Hoja 1') || db.getSheetByName('Sheet1');
-  if (def && db.getSheets().length > 1) db.deleteSheet(def);
+  ['Hoja 1', 'Sheet1', 'Hoja1'].forEach(function (n) { var d = db.getSheetByName(n); if (d && db.getSheets().length > 1 && d.getLastRow() === 0) db.deleteSheet(d); });
   if (readTable_('Categorias').length === 0) {
     var ts = nowIso_();
     upsertRows_('Categorias', DEFAULT_CATS.map(function (c, i) {
@@ -134,7 +140,9 @@ function getDb_(create) {
   var id = prop_('DB_ID');
   if (id) { try { return SpreadsheetApp.openById(id); } catch (e) { } }
   if (!create) throw new Error('Falta correr setup()');
-  var ss = SpreadsheetApp.create(APP_NAME + ' — Base de datos');
+  var ss = null;
+  try { ss = SpreadsheetApp.getActiveSpreadsheet(); } catch (e) { }   // instalación desde la planilla plantilla: esa planilla es la base
+  if (ss) ss.rename(APP_NAME + ' — Base de datos'); else ss = SpreadsheetApp.create(APP_NAME + ' — Base de datos');
   DriveApp.getFileById(ss.getId()).moveTo(folder_('Base de datos'));
   props_().setProperty('DB_ID', ss.getId());
   return ss;
@@ -222,7 +230,7 @@ function verifyToken_(idToken) {
   var res = UrlFetchApp.fetch('https://oauth2.googleapis.com/tokeninfo?id_token=' + encodeURIComponent(idToken), { muteHttpExceptions: true });
   if (res.getResponseCode() !== 200) throw new Error('AUTH: sesión vencida o inválida');
   var info = JSON.parse(res.getContentText());
-  var owner = String(prop_('OWNER_EMAIL', '')).toLowerCase(), client = prop_('OAUTH_CLIENT_ID', '');
+  var owner = String(prop_('OWNER_EMAIL', '')).toLowerCase(), client = prop_('OAUTH_CLIENT_ID', DEFAULT_CLIENT_ID);
   if (!client || info.aud !== client) throw new Error('AUTH: el token no es para esta aplicación');
   if (['accounts.google.com', 'https://accounts.google.com'].indexOf(info.iss) < 0) throw new Error('AUTH: emisor inválido');
   if (String(info.email_verified) !== 'true' || String(info.email).toLowerCase() !== owner) throw new Error('AUTH: esta cuenta no tiene acceso');
@@ -256,6 +264,7 @@ var ACTIONS = {
     var root = getRoot_(true), tot = getTotals_(false);
     out.links = { carpeta: root.getUrl(), baseDeDatos: getDb_(false).getUrl(), totales: tot ? tot.getUrl() : '', entrada: folder_('Entrada').getUrl() };
     out.ai = !!prop_('GEMINI_API_KEY');
+    out.backend = { version: BACKEND_VERSION, owner: prop_('OWNER_EMAIL'), link: personalLink_() };
     out.serverTime = nowIso_();
     return out;
   },
@@ -296,7 +305,17 @@ var ACTIONS = {
   checkInbox: function () { return checkInbox(); },
   ai: function (p) { return aiTask_(p); },
   backupNow: function () { return dailyBackup(); },
-  refreshTotals: function () { refreshTotals_(); return { ok: true }; }
+  refreshTotals: function () { refreshTotals_(); return { ok: true }; },
+  /** Guarda la clave de Gemini del dueño (la prueba antes de guardarla). Nunca se devuelve al navegador. */
+  setAiKey: function (p) {
+    var key = String(p.key || '').trim();
+    if (!key) { props_().deleteProperty('GEMINI_API_KEY'); return { ai: false }; }
+    var prev = prop_('GEMINI_API_KEY');
+    props_().setProperty('GEMINI_API_KEY', key);
+    try { gemini_([{ text: 'Respondé solamente: OK' }], { text: true }); }
+    catch (e) { if (prev) props_().setProperty('GEMINI_API_KEY', prev); else props_().deleteProperty('GEMINI_API_KEY'); throw new Error('La clave no funcionó: ' + String(e.message || e).slice(0, 200)); }
+    return { ai: true };
+  }
 };
 
 function insideRoot_(file) {
@@ -467,4 +486,76 @@ function aiTask_(p) {
     return { texto: gemini_([{ text: ANALYZE_PROMPT + '\nDatos: ' + JSON.stringify(p.datos || {}).slice(0, 60000) + '\nPregunta: ' + p.pregunta }], { text: true }) };
   }
   throw new Error('Tarea de IA desconocida');
+}
+
+/* =========================== Instalación en 3 pasos (planilla plantilla) =========================== */
+function onOpen() {
+  try {
+    SpreadsheetApp.getUi().createMenu('💹 Finanzas')
+      .addItem('Instalar (o reparar)', 'instalar')
+      .addItem('Ver mi link personal', 'mostrarLink')
+      .addToUi();
+  } catch (e) { }
+}
+function personalLink_() { var id = prop_('DEPLOYMENT_ID'); return id ? APP_URL + '?conectar=' + id : ''; }
+/** Paso 2: crea carpetas, base y tareas, publica el backend y entrega el link personal. */
+function instalar() {
+  var log = setup(), dep;
+  try { dep = desplegar_(); props_().setProperty('DEPLOYMENT_ID', dep.id); props_().setProperty('WEBAPP_URL', dep.url); enviarLink_(); }
+  catch (e) { dep = { error: String(e.message || e), code: e.code || 0 }; }
+  mostrarResultado_(dep);
+  return { log: log, deploy: dep };
+}
+function mostrarLink() { mostrarResultado_(prop_('DEPLOYMENT_ID') ? { id: prop_('DEPLOYMENT_ID') } : { error: 'Todavía no está instalado. Usá el menú 💹 Finanzas → Instalar.' }); }
+/** Publica el script como aplicación web con la API de Apps Script (crea versión + implementación, o actualiza la existente). */
+function desplegar_() {
+  var base = 'https://script.googleapis.com/v1/projects/' + ScriptApp.getScriptId(), headers = { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() };
+  var call = function (method, path, body) {
+    var r = UrlFetchApp.fetch(base + path, { method: method, contentType: 'application/json', headers: headers, muteHttpExceptions: true, payload: JSON.stringify(body || {}) });
+    var t = r.getContentText();
+    if (r.getResponseCode() >= 300) { var msg = t; try { msg = JSON.parse(t).error.message; } catch (e) { } var err = new Error(msg); err.code = r.getResponseCode(); throw err; }
+    return JSON.parse(t || '{}');
+  };
+  var v = call('post', '/versions', { description: APP_NAME + ' v' + BACKEND_VERSION });
+  var cfg = { versionNumber: v.versionNumber, manifestFileName: 'appsscript', description: APP_NAME };
+  var d = null, id = prop_('DEPLOYMENT_ID');
+  if (id) { try { d = call('put', '/deployments/' + id, { deploymentConfig: cfg }); } catch (e) { d = null; } }
+  if (!d) d = call('post', '/deployments', cfg);
+  var ep = (d.entryPoints || []).filter(function (x) { return x.entryPointType === 'WEB_APP'; })[0];
+  if (!ep || !ep.webApp) throw new Error('La publicación no generó la aplicación web.');
+  return { id: d.deploymentId, url: ep.webApp.url };
+}
+function enviarLink_() {
+  try {
+    var link = personalLink_(); if (!link) return;
+    MailApp.sendEmail({ to: prop_('OWNER_EMAIL'), subject: 'Tu link personal de ' + APP_NAME,
+      htmlBody: '<p>¡Listo! Tu asistente financiero quedó conectado a tu Google Drive.</p><p><b>Tu link personal:</b><br><a href="' + link + '">' + link + '</a></p><p>Abrilo una vez en cada dispositivo (PC y celular) e iniciá sesión con esta misma cuenta de Google. No lo compartas: es la llave a tu base de datos (igual, solo tu cuenta puede entrar).</p>' });
+  } catch (e) { }
+}
+function mostrarResultado_(dep) {
+  var html;
+  if (dep && dep.id) {
+    var link = personalLink_() || (APP_URL + '?conectar=' + dep.id);
+    html = '<div style="font:14px/1.5 system-ui,Arial;padding:4px 6px"><h2 style="margin:0 0 8px">✅ ¡Instalado!</h2><p>Tu asistente financiero quedó conectado a tu Google Drive (carpeta <b>' + APP_NAME + '</b>).</p>' +
+      '<p><a href="' + link + '" target="_blank" style="display:inline-block;background:#1f4fd8;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600">Abrir mi app</a></p>' +
+      '<p style="font-size:12px;color:#555">Tu link personal (también te llegó por mail, para abrirlo en el celular):<br><input style="width:100%;font-size:12px" readonly value="' + link + '" onclick="this.select()"></p></div>';
+  } else {
+    var api = /Apps Script API|has not enabled|not been used|disabled/i.test((dep && dep.error) || '');
+    html = '<div style="font:14px/1.5 system-ui,Arial;padding:4px 6px">' + (api
+      ? '<h2 style="margin:0 0 8px">Falta un permiso (una sola vez)</h2><ol><li>Abrí <a href="https://script.google.com/home/usersettings" target="_blank"><b>este enlace</b></a> y activá <b>«API de Google Apps Script»</b> (interruptor en «Activado»).</li><li>Volvé a esta planilla y tocá otra vez <b>💹 Finanzas → Instalar</b>.</li></ol><p style="font-size:12px;color:#555">Tus carpetas y tu base de datos ya están creadas; solo falta publicar tu conexión.</p>'
+      : '<h2 style="margin:0 0 8px">No se pudo terminar</h2><p>' + String((dep && dep.error) || '').replace(/</g, '&lt;') + '</p><p>Probá de nuevo con <b>💹 Finanzas → Instalar</b>. Si sigue, escribinos.</p>') + '</div>';
+  }
+  try { SpreadsheetApp.getUi().showModalDialog(HtmlService.createHtmlOutput(html).setWidth(480).setHeight(330), APP_NAME); } catch (e) { Logger.log(html); }
+}
+/** Solo para el dueño de la app: deja lista la planilla plantilla que se comparte con los clientes. */
+function prepararPlantilla() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  ss.rename(APP_NAME + ' — Instalador');
+  var sh = ss.getSheetByName('👋 Empezá acá') || ss.insertSheet('👋 Empezá acá', 0);
+  sh.clear();
+  sh.getRange(1, 1, 9, 1).setValues([['💹 ' + APP_NAME], [''], ['Instalación en 3 pasos:'], ['1. Ya hiciste la copia ✔'], ['2. Arriba, en el menú, tocá  💹 Finanzas  →  Instalar  y aceptá los permisos de Google.'], ['3. Tocá «Abrir mi app». Tu link personal también te llega por mail.'], [''], ['Tus datos quedan en TU Google Drive. Nadie más tiene acceso.'], ['Si el menú 💹 Finanzas no aparece, recargá la página (F5).']]);
+  sh.getRange(1, 1).setFontSize(18).setFontWeight('bold'); sh.getRange(3, 1).setFontWeight('bold'); sh.setColumnWidth(1, 720);
+  ss.getSheets().forEach(function (x) { if (x.getName() !== '👋 Empezá acá') ss.deleteSheet(x); });
+  ['DB_ID', 'ROOT_ID', 'TOTALS_ID', 'DEPLOYMENT_ID', 'WEBAPP_URL', 'OWNER_EMAIL', 'GEMINI_API_KEY', 'OAUTH_CLIENT_ID'].forEach(function (k) { props_().deleteProperty(k); });
+  return 'Plantilla lista. Compartila como «Cualquier persona con el enlace: Lector» y usá el link terminado en /copy.';
 }

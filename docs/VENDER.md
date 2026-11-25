@@ -1,0 +1,56 @@
+# Vender FINANZAS NIRAI TECH IA — guía para el dueño
+
+## Cómo funciona para el cliente
+- Cada cliente tiene **su copia** del backend en **su** cuenta de Google. Sus datos quedan en **su** Drive y vos no los ves.
+- Todos usan la misma app: `https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/v2/`. Cuando la mejorás, se actualiza para todos.
+- Cada cliente se conecta con su **link personal**: `…/v2/?conectar=XXXX`. Se genera al instalar y le llega por mail.
+- Quien entra a `/v2/` sin link personal usa la versión **local gratuita**, que guarda los datos en el navegador. Esa es la versión para compartir.
+
+## Lo que tenés que hacer una sola vez
+
+### 1. Publicar la pantalla de inicio de sesión (Google Cloud)
+Mientras esté en "Prueba", solo pueden entrar los "usuarios de prueba".
+1. Entrá a <https://console.cloud.google.com> → proyecto **FINANZAS NIRAI TECH IA** → **Google Auth Platform**.
+2. **Información de la marca**: completá estos campos.
+   - Página principal: `https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/v2/instalar.html`
+   - Política de privacidad: `https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/v2/privacidad.html`
+   - Condiciones del servicio: `https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/v2/terminos.html`
+3. **Público** → **Publicar app** → confirmar. La app solo pide email y perfil (permisos no sensibles), así que no hace falta verificación.
+
+### 2. Crear la planilla instaladora (plantilla)
+1. Entrá a <https://sheets.new>.
+2. **Extensiones → Apps Script**:
+   - pegá [`apps-script/Code.gs`](https://raw.githubusercontent.com/NiraiTechIA/Finanzas-Nirai-Tech-IA/main/apps-script/Code.gs);
+   - en ⚙️ activá "Mostrar appsscript.json" y pegá [`apps-script/appsscript.json`](https://raw.githubusercontent.com/NiraiTechIA/Finanzas-Nirai-Tech-IA/main/apps-script/appsscript.json);
+   - guardá.
+3. En el editor, elegí la función **prepararPlantilla** → **Ejecutar** → autorizá. Deja la hoja de bienvenida lista.
+4. En la planilla: **Compartir** → Acceso general: **Cualquier persona con el enlace — Lector**.
+5. Copiá el link de la planilla y cambiá el final `/edit…` por `/copy`. Ese es el link del paso 1 del cliente. Cargalo en `v2/js/config.js` → `INSTALL_TEMPLATE_URL`, o pasámelo y lo cargo yo.
+
+> **No uses la plantilla para tus propios datos.** Vos ya tenés tu backend funcionando.
+
+### 3. Antes de cobrar
+- Completá tu **CUIT** en `v2/terminos.html` y `v2/privacidad.html` (dice "[a completar]").
+- Hacé que un abogado revise los términos y la privacidad, y consultá a tu contador por la facturación.
+- Respondé las solicitudes del **Botón de arrepentimiento** dentro de las 24 hs, con un código de identificación (por ejemplo `ARR-2026-001`).
+
+## Instalación del cliente (3 pasos)
+Ver `v2/instalar.html`:
+1. **Crear mi copia** (link de la plantilla).
+2. En la copia: **💹 Finanzas → Instalar** y aceptar los permisos. Si Google lo pide, activar la "API de Google Apps Script" una vez y volver a tocar Instalar.
+3. **Abrir mi app**. El link personal también le llega por mail.
+
+La IA es opcional: el cliente pega su clave gratuita de Google AI Studio en **Ajustes → Inteligencia artificial**.
+
+## Actualizaciones
+- **App (pantallas, lectores, reportes):** se actualiza sola para todos al publicar en GitHub.
+- **Backend (`Code.gs`):** cambia poco. Si cambia, el cliente pega el nuevo código en su copia y vuelve a tocar **💹 Finanzas → Instalar**. Su link no cambia.
+
+## Más adelante: dominio propio y código privado (Cloudflare Pages)
+Cuando tengas clientes:
+1. Comprá un dominio, por ejemplo `niraitech.com.ar` en NIC Argentina o `.com`.
+2. Creá una cuenta en Cloudflare y conectá el repo, que pasa a **privado**.
+3. Agregá el dominio nuevo en Google Cloud → Clientes → Orígenes autorizados.
+4. Cambiá `APP_URL` en `Code.gs`.
+
+La versión anterior sigue en el link de GitHub de siempre.

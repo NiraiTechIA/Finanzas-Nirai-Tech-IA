@@ -10,6 +10,22 @@ function conn() {
   var c = lsGet(LS_CONN, {}) || {}, d = window.NIRAI_CONFIG || {};
   return { url: (c.url || d.BACKEND_URL || '').trim(), clientId: (c.clientId || d.GOOGLE_CLIENT_ID || '').trim() };
 }
+/** Link personal: …/v2/?conectar=<id de implementación o URL /exec>. Conecta este dispositivo con el Drive del dueño del link. */
+function applyConnectParam() {
+  var q = new URLSearchParams(location.search), v = (q.get('conectar') || '').trim();
+  if (q.has('desconectar')) { localStorage.removeItem(LS_CONN); localStorage.removeItem(LS_TOK); }
+  if (!v) return null;
+  var url = /^https:\/\/script\.google\.com\//.test(v) ? v : /^[A-Za-z0-9_-]{20,}$/.test(v) ? 'https://script.google.com/macros/s/' + v + '/exec' : '';
+  q.delete('conectar'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
+  if (!url) return 'invalido';
+  var prev = (lsGet(LS_CONN, {}) || {}).url || '';
+  if (prev && prev !== url) {   // otra cuenta: los datos guardados en este dispositivo son de la otra base (ya están en su Drive)
+    [LS_DATA, LS_QUEUE, LS_TOK].forEach(function (k) { localStorage.removeItem(k); });
+  }
+  lsSet(LS_CONN, { url: url });
+  return prev === url ? 'mismo' : 'nuevo';
+}
+function disconnectDevice() { [LS_CONN, LS_TOK, LS_DATA, LS_QUEUE].forEach(function (k) { localStorage.removeItem(k); }); location.href = location.pathname; }
 function isConfigured() { var c = conn(); return !!(c.url && c.clientId); }
 function deviceId() { var d = lsGet(LS_DEV); if (!d) { d = (/Mobi|Android|iPhone/i.test(navigator.userAgent) ? 'celular-' : 'pc-') + uid().slice(-5); lsSet(LS_DEV, d); } return d; }
 
@@ -107,7 +123,7 @@ function pull() {
     loadTables(d);
     var apply = { mov: function (r) { upsertLocal(DB.movs, fixMov(r)); }, imp: function (r) { var o = Object.assign({}, r); try { o.meta = JSON.parse(r.meta || '{}'); } catch (e) { o.meta = {}; } upsertLocal(DB.imp, o); }, cat: function (r) { upsertLocal(DB.cat, r); }, pend: function (r) { upsertLocal(DB.pend, r); }, map: function (r) { if (r.categoria) DB.map[r.id] = { tipo: r.tipo, categoria: r.categoria, flag: r.flag }; else delete DB.map[r.id]; }, cfg: function (r) { try { DB.cfg[r.id] = JSON.parse(r.valor); } catch (e) { } } };
     SYNC.queue.forEach(function (q) { apply[q.t] && apply[q.t](q.row); });
-    SYNC.ai = !!d.ai; SYNC.links = d.links || {}; SYNC.status = 'ok'; SYNC.lastSync = new Date(); SYNC.error = '';
+    SYNC.ai = !!d.ai; SYNC.links = d.links || {}; SYNC.backend = d.backend || null; SYNC.status = 'ok'; SYNC.lastSync = new Date(); SYNC.error = '';
     var t = getTok(); SYNC.user = t ? { email: t.email, name: t.name } : null;
     autoRecurrentes(); unaVez();
     saveLocal(); UI.refresh(); scheduleFlush(300);

@@ -130,3 +130,6 @@ label.sw{display:inline-flex;gap:5px;align-items:center;cursor:pointer}
 .bigstat{font-size:44px;font-weight:700;margin:16px 0 4px}
 .fijos li{gap:8px}.fijos .pill{flex:none}
 tr.cur td{background:var(--soft);font-weight:600}
+footer.legal{text-align:center;font-size:12px;color:var(--mut);padding:8px 16px 24px}footer.legal a{color:var(--mut)}footer.legal a.arr{font-weight:700;color:var(--ink)}
+@media (max-width:720px){footer.legal{padding-bottom:90px}}
+details summary{cursor:pointer}
