@@ -47,16 +47,14 @@ details.faq{background:var(--card);border:1px solid var(--line);border-radius:10
 <div class="plan"><b>Prueba gratis</b><div class="price">$ 0</div>
 <ul><li>Todas las pantallas y el asistente</li><li>Importá tus resúmenes</li><li>Datos guardados en ese navegador</li></ul>
 <a class="btn" id="planProbar" href="./">Probar ahora</a></div>
-<div class="plan star"><span class="badge2">RECOMENDADO</span><b>Instalación + abono mensual</b><div class="price" id="pMensual">$ —<small> / mes</small></div><div class="small mut" id="pInst">+ instalación única</div>
-<ul><li>Conectado a <b>tu</b> Google Drive</li><li>Celular y PC sincronizados</li><li>Copias de seguridad automáticas</li><li>Lectura con IA de fotos y PDF de cualquier banco</li><li>Instalación asistida, o la hacemos nosotros de forma remota con RustDesk</li><li>Soporte por WhatsApp y actualizaciones</li></ul>
-<a class="btn wa" data-plan="mensual" href="#" target="_blank" rel="noopener">💬 Contratar mensual</a></div>
-<div class="plan"><b>Instalación + abono anual</b><div class="price" id="pAnual">$ —<small> / año</small></div><div class="small mut">Instalación incluida · 2 meses de regalo</div>
-<ul><li>Todo lo del plan mensual</li><li>Un solo pago al año</li></ul>
-<a class="btn wa" data-plan="anual" href="#" target="_blank" rel="noopener">💬 Contratar anual</a></div>
+<div class="plan star"><span class="badge2">VERSIÓN COMPLETA</span><b>Pago único</b><div class="price" id="pUnico">$ 20.000<small> por única vez</small></div><div class="small mut">Sin abono mensual ni vencimiento · instalación incluida</div>
+<ul><li>Conectado a <b>tu</b> Google Drive</li><li>Celular y PC sincronizados</li><li>Copias de seguridad automáticas</li><li>Lectura con IA de fotos y PDF de cualquier banco</li><li>Instalación asistida, o la hacemos nosotros de forma remota con RustDesk</li><li>Soporte por WhatsApp</li><li>Las mejoras de la app te llegan solas</li></ul>
+<a class="btn wa" data-plan="pago único" href="#" target="_blank" rel="noopener">💬 Lo quiero</a></div>
 </div>
-<p class="legal-note">Precios en pesos argentinos. Podés darte de baja cuando quieras. Si contratás a distancia, tenés 10 días para arrepentirte: <a href="arrepentimiento.html"><b>Botón de arrepentimiento</b></a>. Al dar de baja, tus datos siguen en tu Google Drive.</p>
+<p class="legal-note">Precios en pesos argentinos. Pagás una sola vez: no hay abono mensual ni renovaciones. Si contratás a distancia, tenés 10 días para arrepentirte: <a href="arrepentimiento.html"><b>Botón de arrepentimiento</b></a>. Tus datos quedan siempre en tu Google Drive.</p>
 
 <h2>Preguntas frecuentes</h2>
+<details class="faq"><summary>¿Tengo que pagar todos los meses?</summary><p>No. Pagás una sola vez y la app es tuya, sin vencimiento. La instalación está incluida.</p></details>
 <details class="faq"><summary>¿Ustedes ven mis datos?</summary><p>No. Todo se guarda en una carpeta de tu Google Drive, con tu cuenta. Nirai Tech IA no tiene una copia de tu información.</p></details>
 <details class="faq"><summary>¿Necesito saber de computación?</summary><p>No. La instalación es <b>asistida</b>: te guiamos paso a paso, o <b>la hacemos nosotros de forma remota</b> en tu computadora mediante <b>RustDesk</b> (vos lo autorizás y ves todo lo que hacemos). Lleva unos 20 minutos. Después, todo se maneja desde la app.</p></details>
 <details class="faq"><summary>¿Cómo funciona la instalación remota?</summary><p>Descargás <a href="https://rustdesk.com" target="_blank" rel="noopener">RustDesk</a> (gratis), nos pasás el código que te muestra y aceptás la conexión. Entramos solo durante la instalación, con vos presente, y podés cortarla cuando quieras. Nunca te pedimos contraseñas: el inicio de sesión de Google lo hacés vos.</p></details>
@@ -76,9 +74,7 @@ details.faq{background:var(--card);border:1px solid var(--line);border-radius:10
   var C = window.NIRAI_CONFIG || {}, P = C.PRICES || {}, nf = new Intl.NumberFormat('es-AR');
   var num = C.SUPPORT_WHATSAPP || '5491172373270', wa = function (t) { return 'https://wa.me/' + num + '?text=' + encodeURIComponent(t); };
   var $ = function (id) { return document.getElementById(id); };
-  if (P.mensual) $('pMensual').innerHTML = '$ ' + nf.format(P.mensual) + '<small> / mes</small>';
-  if (P.instalacion) $('pInst').textContent = '+ instalación única de $ ' + nf.format(P.instalacion);
-  if (P.anual) $('pAnual').innerHTML = '$ ' + nf.format(P.anual) + '<small> / año</small>';
+  if (P.unico) $('pUnico').innerHTML = '$ ' + nf.format(P.unico) + '<small> por única vez</small>';
   var trial = C.TRIAL_URL || './'; $('ctaProbar').href = trial; $('planProbar').href = trial;
   var gen = 'Hola Nirai Tech IA, quiero contratar FINANZAS NIRAI TECH IA.';
   $('ctaWa').href = wa(gen); $('ctaWa2').href = wa(gen);
