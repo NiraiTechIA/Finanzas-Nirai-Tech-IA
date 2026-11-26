@@ -96,7 +96,7 @@ function hbars(rows, total) {
 /* ============================ Inicio (dashboard) ============================ */
 function banners() {
   var h = '';
-  if (!isConfigured()) h += '<div class="banner warn">📴 <div><b>Modo local:</b> tus datos quedan solo en este navegador. ¿Querés tu asistente conectado a <b>tu propio Google Drive</b>, en el celular y la PC, con copias automáticas e IA?</div><a class="btn pri" href="instalar.html">Cómo instalarlo</a><button class="btn ghost" data-act="tab" data-k="ajustes">Ya tengo mi link</button></div>';
+  if (!isConfigured()) h += '<div class="banner warn">📴 <div><b>Modo local:</b> tus datos quedan solo en este navegador. ¿Querés tu asistente conectado a <b>tu propio Google Drive</b>, en el celular y la PC, con copias automáticas e IA?</div><a class="btn pri" href="planes.html">Ver planes</a><a class="btn" href="instalar.html">Cómo instalarlo</a><button class="btn ghost" data-act="tab" data-k="ajustes">Ya tengo mi link</button></div>';
   else if (SYNC.status === 'login') h += '<div class="banner bad">🔑 <div>Iniciá sesión con Google para sincronizar.' + (SYNC.queue.length ? ' Hay ' + SYNC.queue.length + ' cambios esperando.' : '') + '</div><button class="btn pri" data-act="tab" data-k="ajustes">Iniciar sesión</button></div>';
   if (lsGet('finanzas_chini_v1') && !DB.cfg.migradoV1) h += '<div class="banner">🗂️ <div>Encontré datos de la versión anterior en este navegador.</div><button class="btn pri" data-act="migrar">Traerlos</button><button class="btn" data-act="noMigrar">Ignorar</button></div>';
   recurrentesPendientes().forEach(function (p) {
