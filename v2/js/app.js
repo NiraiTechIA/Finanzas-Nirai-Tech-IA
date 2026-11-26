@@ -94,8 +94,19 @@ function hbars(rows, total) {
 }
 
 /* ============================ Inicio (dashboard) ============================ */
+/* Contacto mensual con el cliente: una vez por mes, una tarjeta con WhatsApp (no bloquea nada). */
+var CHECKIN_DIAS = 30;
+function checkinCard() {
+  if (!isDirect() || SYNC.status !== 'ok') return '';
+  var last = DB.cfg.ultimoContacto;
+  if (!last) { setCfg('ultimoContacto', nowIso()); return ''; }   // empieza a contar desde la activación
+  if ((Date.now() - new Date(last).getTime()) / 86400000 < CHECKIN_DIAS) return '';
+  var C = window.NIRAI_CONFIG || {}, t = getTok() || {};
+  var wa = 'https://wa.me/' + (C.SUPPORT_WHATSAPP || '5491172373270') + '?text=' + encodeURIComponent('Hola Nirai Tech IA, soy ' + (t.email && t.email !== 'test' ? t.email : 'cliente') + ' y uso FINANZAS NIRAI TECH IA. ');
+  return '<div class="card checkin" style="border-left:4px solid #25d366"><h2>👋 ¿Cómo te está yendo con la app?</h2><p>Si necesitás algo, tenés una duda o se te ocurre una mejora, escribinos. Nos sirve mucho saber cómo la usás.</p><div class="row mt"><a class="btn" style="background:#25d366;border-color:#25d366;color:#fff" href="' + wa + '" target="_blank" rel="noopener" data-act="checkinWa">💬 Escribir por WhatsApp</a><button class="btn ghost" data-act="checkin">Todo bien, gracias</button></div></div>';
+}
 function banners() {
-  var h = '';
+  var h = checkinCard();
   if (!isConfigured()) h += '<div class="banner">🎁 <div><b>Prueba gratis:</b> tus datos quedan solo en este navegador. ¿Querés tu asistente conectado a <b>tu propio Google Drive</b>, en el celular y la PC, con copias automáticas e IA?</div><a class="btn pri" href="planes.html">Ver planes</a></div>';
   else if (SYNC.status === 'login') h += '<div class="banner bad">🔑 <div>' + (isDirect() && !SYNC.lastSync ? 'Conectá tu Google Drive: tus datos se guardan en tu propia cuenta.' : 'Iniciá sesión con Google para sincronizar.') + (SYNC.queue.length ? ' Hay ' + SYNC.queue.length + ' cambios esperando.' : '') + '</div>' + (isDirect() ? '<button class="btn pri" data-act="gconnect">🔗 Conectar con Google</button>' : '<button class="btn pri" data-act="tab" data-k="ajustes">Iniciar sesión</button>') + '</div>';
   if (lsGet('finanzas_chini_v1') && !DB.cfg.migradoV1) h += '<div class="banner">🗂️ <div>Encontré datos de la versión anterior en este navegador.</div><button class="btn pri" data-act="migrar">Traerlos</button><button class="btn" data-act="noMigrar">Ignorar</button></div>';
@@ -475,7 +486,7 @@ function viewAjustes() {
     var wa = 'https://wa.me/' + ((window.NIRAI_CONFIG || {}).SUPPORT_WHATSAPP || '5491172373270') + '?text=' + encodeURIComponent('Hola Nirai Tech IA, estoy probando FINANZAS NIRAI TECH IA y quiero contratarlo.');
     h += '<div class="card" style="border:2px solid var(--acc)"><h2>🎁 Estás usando la prueba gratis</h2><p>Todo lo que cargues queda guardado <b>solo en este navegador</b>. Con la versión completa:</p><ul class="tips"><li>☁️ Tus datos se guardan en <b>tu propio Google Drive</b>, con copia de seguridad diaria.</li><li>📱 Usás la misma información en el <b>celular y la PC</b>.</li><li>🤖 La <b>IA</b> lee fotos, capturas y PDF de cualquier banco.</li><li>🧑‍💻 <b>Instalación asistida</b> (o la hacemos nosotros por acceso remoto) y <b>45 días de soporte por WhatsApp</b>.</li></ul><p class="small mut">Lo que cargaste en la prueba se pasa solo cuando contratás.</p><div class="row mt"><a class="btn pri" href="planes.html">Ver planes y precios</a><a class="btn" style="background:#25d366;border-color:#25d366;color:#fff" href="' + wa + '" target="_blank" rel="noopener">💬 Quiero contratarlo</a></div>' +
       '</div>';
-  } else h += '<div class="card"><h2>☁️ Google Drive</h2>' + (isDirect() ? (tokenValid() ? '' : '<p>Tocá <b>Conectar con Google</b>, elegí tu cuenta y aceptá el permiso. La app crea la carpeta <i>FINANZAS NIRAI TECH IA</i> en tu Drive y solo puede ver los archivos que ella misma crea.</p>') : avanzado);
+  } else h += '<div class="card"><h2>☁️ Google Drive</h2>' + (isDirect() ? '<p class="small mut">✅ Versión completa activada para <b>' + esc(licenseEmail()) + '</b></p>' + (tokenValid() ? '' : '<p>Tocá <b>Conectar con Google</b>, elegí tu cuenta y aceptá el permiso. La app crea la carpeta <i>FINANZAS NIRAI TECH IA</i> en tu Drive y solo puede ver los archivos que ella misma crea.</p>') : avanzado);
   if (isConfigured()) {
     h += '<div class="row mt">' + (tokenValid() ? '<span class="pill ok">✓ Sesión iniciada' + (t && t.email && t.email !== 'test' ? ': ' + esc(t.email) : '') + '</span><button class="btn ghost small" data-act="logout">Cerrar sesión</button>' : '<div id="gbtn"></div>') + statusPill() + '</div>';
     if (SYNC.error) h += '<p class="small neg">' + esc(SYNC.error) + '</p>';
@@ -549,6 +560,8 @@ document.addEventListener('click', function (e) {
     case 'xlsx': exportXlsx(); break;
     case 'logout': logout(); render(); break;
     case 'gconnect': requestDirectToken(); break;
+    case 'checkinWa': window.open(b.href, '_blank', 'noopener'); setCfg('ultimoContacto', nowIso()); setTimeout(render, 50); break;
+    case 'checkin': setCfg('ultimoContacto', nowIso()); setTimeout(render, 50); break;
     case 'syncNow': connectNow().then(function () { toast(SYNC.status === 'ok' ? 'Sincronizado' : (SYNC.error || 'No se pudo sincronizar'), SYNC.status !== 'ok'); render(); }); break;
     case 'copyLink': { var lk = SYNC.backend && SYNC.backend.link; if (lk && navigator.clipboard) navigator.clipboard.writeText(lk).then(function () { toast('Link copiado'); }); break; }
     case 'disconnect': if (confirm('¿Desconectar este dispositivo? Tus datos siguen en tu Google Drive; para volver a conectarlo usá tu link personal.')) disconnectDevice(); break;
@@ -618,5 +631,7 @@ document.addEventListener('focusout', function () { setTimeout(function () { if 
 
 /* ============================ Arranque ============================ */
 var _conectado = applyConnectParam(); loadLocal(); loadUI(); autoRecurrentes(); if (!isConfigured()) unaVez(); render(); startSync();
-if (_conectado === 'nuevo') toast('🔗 Este dispositivo quedó vinculado a tu Google Drive. Iniciá sesión con tu cuenta para sincronizar.'); else if (_conectado === 'invalido') toast('El link de conexión no es válido', true);
+if (_conectado === 'activado') licenseReady().then(function (l) { if (l) toast('✅ Versión completa activada para ' + l.email + '. Tocá «Conectar con Google» y elegí esa cuenta.'); });
+else if (_conectado === 'sincodigo') toast('Para activar la versión completa necesitás tu código de activación. Pedilo por WhatsApp al 11 7237-3270.', true);
+else if (_conectado === 'nuevo') toast('🔗 Este dispositivo quedó vinculado a tu Google Drive. Iniciá sesión con tu cuenta para sincronizar.'); else if (_conectado === 'invalido') toast('El link de conexión no es válido', true);
 window.APP = { DB: DB, UI: UI, SYNC: SYNC, summarize: summarize, sendChat: sendChat, handleFiles: handleFiles, render: render, api: api, pull: pull, connectNow: connectNow, putMov: putMov };

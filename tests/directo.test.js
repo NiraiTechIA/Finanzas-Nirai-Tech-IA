@@ -6,6 +6,10 @@ const { makeServer } = require('./server');
 const { makeGoogle } = require('./google-fake');
 const FX = f => path.join(__dirname, 'fixtures', f);
 const PORT = 8798, URL = 'http://localhost:' + PORT + '/v2/', APP = 'FINANZAS NIRAI TECH IA';
+// Par de claves de prueba (la real del dueño nunca está en el repo)
+const KP = crypto.generateKeyPairSync('ec', { namedCurve: 'P-256' }), PUB = KP.publicKey.export({ format: 'jwk' }), PRIV = KP.privateKey.export({ format: 'jwk' });
+const b64u = b => Buffer.from(b).toString('base64url');
+const lic = (email, key) => { const data = Buffer.from('v1|' + email + '|2026-11-26'); return b64u(data) + '.' + b64u(crypto.sign('sha256', data, { key: key || KP.privateKey, dsaEncoding: 'ieee-p1363' })); };
 let pass = 0; const ok = n => { pass++; console.log('  ✓', n); };
 
 (async () => {
@@ -19,13 +23,13 @@ let pass = 0; const ok = n => { pass++; console.log('  ✓', n); };
     await G.attach(ctx);
     await ctx.route('https://accounts.google.com/gsi/client', r => r.fulfill({ contentType: 'text/javascript', body: "window.google = { accounts: { oauth2: { initTokenClient: function (c) { window.__gis = c; return { requestAccessToken: function (o) { window.__tokReq = o; } }; }, hasGrantedAllScopes: function () { return true; } } } };" }));
     const page = await ctx.newPage();
-    await page.route('**/js/config.js', r => r.fulfill({ contentType: 'text/javascript', body: "window.NIRAI_CONFIG = { BACKEND_URL: '', GOOGLE_CLIENT_ID: 'cliente-test.apps.googleusercontent.com', TRIAL_URL: 'http://localhost:" + PORT + "/v2/' };" }));
+    await page.route('**/js/config.js', r => r.fulfill({ contentType: 'text/javascript', body: "window.NIRAI_CONFIG = { BACKEND_URL: '', GOOGLE_CLIENT_ID: 'cliente-test.apps.googleusercontent.com', TRIAL_URL: 'http://localhost:" + PORT + "/v2/', LICENSE_KEY: " + JSON.stringify({ kty: 'EC', crv: 'P-256', x: PUB.x, y: PUB.y }) + " };" }));
     page.on('pageerror', e => errors.push(e.message));
     page.on('console', m => { if (m.type() === 'error' && !/favicon|ERR_|401|status of 4/.test(m.text())) errors.push(m.text()); });
     page.on('dialog', d => d.accept());
     if (opts.token !== false) await page.addInitScript(([t, e]) => { localStorage.setItem('nirai_tok', JSON.stringify({ t, exp: Date.now() / 1000 + 3600, email: e, direct: true })); }, [G.token, G.email]);
     if (opts.trial) await page.addInitScript(() => { if (!sessionStorage.getItem('seed')) { sessionStorage.setItem('seed', 1); localStorage.setItem('nirai_queue_v2', JSON.stringify([{ k: 'mov|prueba1', t: 'mov', row: { id: 'prueba1', fecha: '2026-11-03', mes: '2026-11', descripcion: 'Cargado en la prueba', monto: -1234, tipo: 'Gasto', categoria: 'Supermercado', medio: 'Débito', estado: 'activo', origen: 'manual', creado: '2026-11-03T10:00:00Z', modificado: '2026-11-03T10:00:00Z' } }])); } });
-    await page.goto(URL + (opts.link === false ? '' : '?conectar=google')); await page.waitForSelector('#tabs button');
+    await page.goto(URL + (opts.link === false ? '' : opts.link || '?activar=' + lic(opts.licEmail || 'Cliente@gmail.com'))); await page.waitForSelector('#tabs button');
     return { ctx, page };
   };
   const synced = page => page.waitForFunction(() => window.APP.SYNC.queue.length === 0 && window.APP.SYNC.status === 'ok', null, { timeout: 20000 }).catch(async e => { console.log('ESTADO', await page.evaluate(() => [window.APP.SYNC.status, window.APP.SYNC.error, window.APP.SYNC.queue.length])); console.log(G.calls.slice(-8)); throw e; });
@@ -139,6 +143,59 @@ let pass = 0; const ok = n => { pass++; console.log('  ✓', n); };
   await E.page.evaluate(() => localStorage.clear()); await E.page.goto(URL); await E.page.waitForSelector('#tabs button');
   await tab(E.page, 'ajustes'); assert(!(await E.page.isVisible('[data-act="gconnect"]'))); assert(await E.page.isVisible('#syncPill:has-text("Prueba gratis")'));
   ok('sin sesión muestra «Conectar con Google»; la prueba gratis no muestra nada de Google');
+
+  // 10) códigos de activación
+  const otraClave = crypto.generateKeyPairSync('ec', { namedCurve: 'P-256' }).privateKey;
+  for (const bad of ['?activar=' + lic('cliente@gmail.com', otraClave), '?activar=' + lic('cliente@gmail.com').replace(/^./, 'x'), '?activar=basura', '?conectar=google']) {
+    const X = await device({ link: bad, token: false });
+    await X.page.waitForTimeout(400);
+    assert(await X.page.isVisible('#syncPill:has-text("Prueba gratis")'), 'no activa con ' + bad);
+    assert.strictEqual(await X.page.evaluate(() => localStorage.getItem('nirai_lic')), null);
+    await X.ctx.close();
+  }
+  ok('códigos falsos, adulterados o de otra clave (y el link viejo ?conectar=google) no activan nada');
+
+  const O = await device({ token: false, licEmail: 'otra.persona@gmail.com' });
+  await tab(O.page, 'ajustes'); assert(await O.page.isVisible('text=otra.persona@gmail.com'));
+  await O.page.click('#gbtn button[data-act="gconnect"]');
+  assert.strictEqual(await O.page.evaluate(() => window.__tokReq.login_hint), 'otra.persona@gmail.com', 'Google ya sugiere la cuenta del código');
+  await O.page.evaluate(t => window.__gis.callback({ access_token: t, expires_in: 3599 }), G.token);
+  await O.page.waitForFunction(() => /es para otra\.persona@gmail\.com/.test(window.APP.SYNC.error));
+  assert.strictEqual(await O.page.evaluate(() => localStorage.getItem('nirai_tok')), null, 'no guarda la sesión de otra cuenta');
+  ok('el código está atado al Gmail: con otra cuenta de Google no conecta');
+
+  const P2 = await device({ token: false, licEmail: 'clien.te+finanzas@googlemail.com' });
+  await P2.page.click('[data-act="gconnect"]');
+  await P2.page.evaluate(t => window.__gis.callback({ access_token: t, expires_in: 3599 }), G.token);
+  await synced(P2.page);
+  ok('Gmail con puntos, +alias o googlemail.com cuenta como la misma cuenta');
+
+  // 11) contacto mensual
+  await tab(P2.page, 'inicio'); assert(!(await P2.page.isVisible('.checkin')), 'recién activado no molesta');
+  await P2.page.evaluate(() => { window.APP.DB.cfg.ultimoContacto = new Date(Date.now() - 31 * 86400000).toISOString(); window.APP.render(); });
+  assert(await P2.page.isVisible('.checkin:has-text("¿Cómo te está yendo")'));
+  assert(/wa\.me\/5491172373270\?text=.*cliente%40gmail\.com/.test(await P2.page.getAttribute('.checkin a', 'href')));
+  await P2.page.click('.checkin button:has-text("Todo bien")'); await P2.page.waitForTimeout(200);
+  assert(!(await P2.page.isVisible('.checkin'))); await synced(P2.page);
+  assert((Date.now() - new Date(JSON.parse(G.table(db(), 'Config').find(r => r.id === 'ultimoContacto').valor)).getTime()) < 60000, 'queda guardado en Drive (vale para todos sus dispositivos)');
+  ok('cada 30 días aparece «¿Cómo te está yendo?» con WhatsApp, sin bloquear nada');
+
+  // 12) página del dueño para generar códigos
+  const L = await device({ link: false, token: false });
+  await L.page.goto(URL + 'licencias.html');
+  await L.page.fill('#priv', JSON.stringify(crypto.generateKeyPairSync('ec', { namedCurve: 'P-256' }).privateKey.export({ format: 'jwk' }))); await L.page.click('#saveKey');
+  assert(/no corresponde/.test(await L.page.innerText('#keyMsg')), 'rechaza una clave que no es la de la app');
+  await L.page.click('#gen'); assert(/Primero cargá/.test(await L.page.innerText('#genMsg')));
+  await L.page.fill('#priv', JSON.stringify(PRIV)); await L.page.click('#saveKey'); await L.page.waitForSelector('#boxOk:not(.hide)');
+  await L.page.fill('#email', 'Nuevo.Cliente@gmail.com'); await L.page.fill('#cel', '11 2345-6789'); await L.page.click('#gen');
+  await L.page.waitForSelector('#res:not(.hide)');
+  const link = await L.page.innerText('#link'); assert(link.startsWith(URL + '?activar='));
+  assert(/^https:\/\/wa\.me\/5491123456789\?text=/.test(await L.page.getAttribute('#wa', 'href')));
+  await L.page.reload(); assert(await L.page.isVisible('#boxOk:not(.hide)'), 'la clave queda en el dispositivo'); assert(await L.page.isVisible('text=nuevo.cliente@gmail.com'));
+  await L.page.goto(link); await L.page.waitForSelector('#tabs button');
+  await L.page.waitForFunction(() => (JSON.parse(localStorage.getItem('nirai_lic') || '{}').email) === 'nuevo.cliente@gmail.com');
+  assert(await L.page.isVisible('text=Versión completa activada para nuevo.cliente@gmail.com'));
+  ok('página del dueño: valida la clave privada, genera el link para un Gmail y ese link activa la app');
 
   assert.deepStrictEqual(errors, [], 'sin errores de JavaScript: ' + errors.join(' | '));
   await browser.close(); srv.close();

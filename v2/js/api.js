@@ -10,20 +10,59 @@ function conn() {
   var c = lsGet(LS_CONN, {}) || {}, d = window.NIRAI_CONFIG || {};
   return { url: c.mode === 'directo' ? '' : (c.url || d.BACKEND_URL || '').trim(), clientId: (c.clientId || d.GOOGLE_CLIENT_ID || '').trim(), mode: c.mode || '' };
 }
-/** Modo directo: la app usa Google Drive y Sheets desde el navegador (sin instalar nada). */
-function isDirect() { var c = conn(); return c.mode === 'directo' && !!c.clientId; }
+/** Modo directo: la app usa Google Drive y Sheets desde el navegador (sin instalar nada). Requiere código de activación. */
+function isDirect() { var c = conn(); return c.mode === 'directo' && !!c.clientId && !!(lsGet(LS_LIC) || {}).token; }
+
+/* ---------- Código de activación: firmado por Nirai Tech IA y atado al Gmail del cliente ---------- */
+var LS_LIC = 'nirai_lic', _licCheck = null;
+function normEmail(e) {
+  e = String(e || '').trim().toLowerCase(); var i = e.lastIndexOf('@'); if (i < 0) return e;
+  var u = e.slice(0, i), d = e.slice(i + 1);
+  if (d === 'gmail.com' || d === 'googlemail.com') { u = u.split('+')[0].replace(/\./g, ''); d = 'gmail.com'; }
+  return u + '@' + d;
+}
+function b64uBytes(s) { s = String(s).replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; var b = atob(s), u = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; }
+/** Devuelve { email, fecha } si el código es auténtico; si no, null. */
+function verifyLicense(token) {
+  try {
+    var k = (window.NIRAI_CONFIG || {}).LICENSE_KEY, parts = String(token || '').split('.');
+    if (!k || parts.length !== 2 || !window.crypto || !crypto.subtle) return Promise.resolve(null);
+    var data = b64uBytes(parts[0]), sig = b64uBytes(parts[1]), txt = new TextDecoder().decode(data).split('|');
+    if (txt[0] !== 'v1' || !/@/.test(txt[1] || '')) return Promise.resolve(null);
+    return crypto.subtle.importKey('jwk', { kty: 'EC', crv: 'P-256', x: k.x, y: k.y, ext: true }, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify'])
+      .then(function (key) { return crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, key, sig, data); })
+      .then(function (ok) { return ok ? { email: txt[1], fecha: txt[2] || '' } : null; }).catch(function () { return null; });
+  } catch (e) { return Promise.resolve(null); }
+}
+/** Revisa el código guardado (una vez por carga). Si no es válido, vuelve a la prueba gratis. */
+function licenseReady() {
+  if (_licCheck) return _licCheck;
+  var l = lsGet(LS_LIC); if (!l || !l.token) return (_licCheck = Promise.resolve(null));
+  return (_licCheck = verifyLicense(l.token).then(function (info) {
+    if (!info) {
+      localStorage.removeItem(LS_LIC); localStorage.removeItem(LS_CONN); localStorage.removeItem(LS_TOK);
+      SYNC.status = 'local'; SYNC.error = ''; if (typeof toast === 'function') toast('El código de activación no es válido. Pedí uno nuevo por WhatsApp al 11 7237-3270.', true);
+      UI.refresh(); return null;
+    }
+    if (!l.email || l.email !== info.email) lsSet(LS_LIC, { token: l.token, email: info.email, fecha: info.fecha });
+    return info;
+  }));
+}
+function licenseEmail() { return (lsGet(LS_LIC) || {}).email || ''; }
 /** Link personal: …/v2/?conectar=<id de implementación o URL /exec>. Conecta este dispositivo con el Drive del dueño del link. */
 function applyConnectParam() {
   var q = new URLSearchParams(location.search), v = (q.get('conectar') || '').trim();
   if (q.has('desconectar')) { localStorage.removeItem(LS_CONN); localStorage.removeItem(LS_TOK); }
-  if (!v) return null;
-  if (/^(google|directo)$/i.test(v)) {
-    q.delete('conectar'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
-    var pc = lsGet(LS_CONN, {}) || {};
+  var act = (q.get('activar') || '').trim();
+  if (act) {   // código de activación de la versión completa: …/v2/?activar=CÓDIGO
+    q.delete('activar'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
+    var pc = lsGet(LS_CONN, {}) || {}, pl = lsGet(LS_LIC) || {};
     if (pc.url) [LS_DATA, LS_QUEUE, LS_TOK].forEach(function (k) { localStorage.removeItem(k); });   // venía de otra instalación
-    lsSet(LS_CONN, { mode: 'directo' });
-    return pc.mode === 'directo' ? 'mismo' : 'nuevo';
+    lsSet(LS_LIC, { token: act }); lsSet(LS_CONN, { mode: 'directo' });
+    return pc.mode === 'directo' && pl.token === act ? 'mismo' : 'activado';
   }
+  if (!v) return null;
+  if (/^(google|directo)$/i.test(v)) { q.delete('conectar'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash); return 'sincodigo'; }
   var url = /^https:\/\/script\.google\.com\//.test(v) ? v : /^[A-Za-z0-9_-]{20,}$/.test(v) ? 'https://script.google.com/macros/s/' + v + '/exec' : '';
   q.delete('conectar'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
   if (!url) return 'invalido';
@@ -89,8 +128,8 @@ function setupDirect() {
 }
 function requestDirectToken() {
   if (!_tokenClient) { initGis(); if (typeof toast === 'function') toast('Cargando Google… tocá de nuevo en un segundo.'); return; }
-  var t = lsGet(LS_TOK) || {};
-  _tokenClient.requestAccessToken(t.email ? { prompt: '', login_hint: t.email } : { prompt: 'consent' });
+  var t = lsGet(LS_TOK) || {}, le = licenseEmail();
+  _tokenClient.requestAccessToken(t.email ? { prompt: '', login_hint: t.email } : { prompt: 'consent', login_hint: le || undefined });
 }
 function onAccessToken(resp) {
   if (!resp || resp.error || !resp.access_token) { SYNC.status = 'login'; SYNC.error = 'Google no dio el permiso' + (resp && resp.error ? ' (' + resp.error + ')' : '') + '.'; UI.refresh(); return; }
@@ -99,7 +138,11 @@ function onAccessToken(resp) {
   }
   var exp = Math.floor(Date.now() / 1000) + Number(resp.expires_in || 3599);
   fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { Authorization: 'Bearer ' + resp.access_token } }).then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; }).then(function (u) {
-    var prev = lsGet(LS_TOK) || {};
+    var prev = lsGet(LS_TOK) || {}, le = licenseEmail();
+    if (le && normEmail(u.email) !== normEmail(le)) {   // el código es para otra cuenta de Google
+      SYNC.status = 'login'; SYNC.error = 'Tu código de activación es para ' + le + '. Tocá «Conectar con Google» y elegí esa cuenta.';
+      if (typeof toast === 'function') toast(SYNC.error, true); UI.refresh(); return;
+    }
     if (prev.email && u.email && prev.email !== u.email) { [LS_DATA, LS_QUEUE].forEach(function (k) { localStorage.removeItem(k); }); loadLocal(); }   // otra cuenta de Google
     lsSet(LS_TOK, { t: resp.access_token, exp: exp, email: u.email || prev.email || '', name: u.name || '', direct: true });
     SYNC.user = { email: u.email, name: u.name };
@@ -147,7 +190,11 @@ function sendGet(url, body) {
 function sendPost(url, body) { return fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body), redirect: 'follow' }).then(readJson); }
 function isNetErr(e) { return /Failed to fetch|NetworkError|Load failed|network/i.test(e && e.message || ''); }
 function api(action, payload) {
-  if (isDirect()) return getToken().then(function (tok) { return GD.call(action, payload, tok, (getTok() || {}).email || '', deviceId()); }).catch(function (e) {
+  if (isDirect()) return licenseReady().then(function (lic) {
+    if (!lic) throw new Error('Falta un código de activación válido.');
+    var t = getTok() || {}; if (t.email && t.email !== 'test' && normEmail(t.email) !== normEmail(lic.email)) { localStorage.removeItem(LS_TOK); throw new Error('AUTH: tu código de activación es para ' + lic.email + '.'); }
+    return getToken();
+  }).then(function (tok) { return GD.call(action, payload, tok, (getTok() || {}).email || '', deviceId()); }).catch(function (e) {
     if (/^AUTH/.test(e && e.message || '')) { if (!window.NIRAI_TEST_TOKEN) localStorage.removeItem(LS_TOK); SYNC.status = 'login'; }
     throw netError(e);
   });
@@ -199,7 +246,8 @@ function pull() {
     return true;
   }).catch(function (e) { SYNC.error = e.message; SYNC.status = /AUTH/.test(e.message) ? 'login' : 'offline'; UI.refreshStatus(); return false; });
 }
-function connectNow() { if (!isConfigured()) { SYNC.status = 'local'; UI.refreshStatus(); return Promise.resolve(); } if (!tokenValid()) { SYNC.status = 'login'; UI.refreshStatus(); return Promise.resolve(); } SYNC.status = 'connecting'; SYNC.error = ''; UI.refreshStatus(); return pull().then(function () { return flush(); }); }
+function connectNow() { if (isDirect()) return licenseReady().then(function () { return _connectNow(); }); return _connectNow(); }
+function _connectNow() { if (!isConfigured()) { SYNC.status = 'local'; UI.refreshStatus(); return Promise.resolve(); } if (!tokenValid()) { SYNC.status = 'login'; UI.refreshStatus(); return Promise.resolve(); } SYNC.status = 'connecting'; SYNC.error = ''; UI.refreshStatus(); return pull().then(function () { return flush(); }); }
 function startSync() {
   initGis(); connectNow();
   setInterval(function () { if (document.visibilityState === 'visible' && isConfigured() && tokenValid() && !UI.busy()) pull(); }, 90000);
