@@ -34,11 +34,17 @@ Mientras esté en "Prueba", solo pueden entrar los "usuarios de prueba".
 - Hacé que un abogado revise los términos y la privacidad, y consultá a tu contador por la facturación.
 - Respondé las solicitudes del **Botón de arrepentimiento** dentro de las 24 hs, con un código de identificación (por ejemplo `ARR-2026-001`).
 
-## Instalación del cliente (3 pasos)
-Ver `v2/instalar.html`:
+## Instalación del cliente
+Ver `v2/instalar.html`: tiene ilustraciones de cada pantalla.
 1. **Crear mi copia** (link de la plantilla).
-2. En la copia: **💹 Finanzas → Instalar** y aceptar los permisos. Si Google lo pide, activar la "API de Google Apps Script" una vez y volver a tocar Instalar.
-3. **Abrir mi app**. El link personal también le llega por mail.
+2. En la copia: **💹 Finanzas → 1. Instalar**, aceptar los permisos. Crea la carpeta y la base de datos.
+3. **Publicar la conexión** (1 minuto):
+   - Extensiones → Apps Script → Implementar → Nueva implementación → ⚙️ Aplicación web.
+   - Ejecutar como: Yo · Quién tiene acceso: **Cualquier usuario** → Implementar.
+   - Copiar la URL y pegarla en **💹 Finanzas → 2. Pegar mi URL publicada**.
+4. **Abrir mi app** e iniciar sesión. El link personal también le llega por mail.
+
+> La publicación automática (API de Apps Script) suele fallar en cuentas comunes. Por eso el paso 3 es manual y está explicado como un paso normal. Si en alguna cuenta funciona sola, el paso 3 se saltea.
 
 La IA es opcional: el cliente pega su clave gratuita de Google AI Studio en **Ajustes → Inteligencia artificial**.
 

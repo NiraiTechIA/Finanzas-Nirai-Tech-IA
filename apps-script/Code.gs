@@ -24,7 +24,7 @@
  */
 
 var APP_NAME = 'FINANZAS NIRAI TECH IA';
-var BACKEND_VERSION = 6;
+var BACKEND_VERSION = 7;
 var APP_URL = 'https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/v2/';
 // ID de cliente OAuth de la app publicada (es público: identifica a la app, no da acceso a nada)
 var DEFAULT_CLIENT_ID = '288188064237-aatf9mti4ioim04pup4m4ok9abdp16ub.apps.googleusercontent.com';
@@ -517,9 +517,10 @@ function aiTask_(p) {
 function onOpen() {
   try {
     SpreadsheetApp.getUi().createMenu('💹 Finanzas')
-      .addItem('Instalar (o reparar)', 'instalar')
+      .addItem('1. Instalar', 'instalar')
+      .addItem('2. Pegar mi URL publicada', 'cargarUrlManual')
+      .addSeparator()
       .addItem('Ver mi link personal', 'mostrarLink')
-      .addItem('Cargar la URL publicada a mano', 'cargarUrlManual')
       .addToUi();
   } catch (e) { }
 }
@@ -581,14 +582,15 @@ function mostrarResultado_(dep) {
       '<p><a href="' + link + '" target="_blank" style="display:inline-block;background:#1f4fd8;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600">Abrir mi app</a></p>' +
       '<p style="font-size:12px;color:#555">Tu link personal (también te llegó por mail, para abrirlo en el celular):<br><input style="width:100%;font-size:12px" readonly value="' + link + '" onclick="this.select()"></p></div>';
   } else {
-    var err = String((dep && dep.error) || ''), userOff = /has not enabled the Apps Script API/i.test(err);
-    var manual = '<p><b>Publicalo a mano (4 clics, una sola vez):</b></p><ol style="padding-left:18px"><li>Arriba: <b>Extensiones → Apps Script</b>.</li><li>Botón azul <b>Implementar → Nueva implementación</b>. En el engranaje ⚙️ elegí <b>Aplicación web</b>.</li><li><i>Ejecutar como:</i> <b>Yo</b> · <i>Quién tiene acceso:</i> <b>Cualquier usuario</b> (no «…con una cuenta de Google») → <b>Implementar</b> y aceptá los permisos.</li><li>Copiá la <b>URL de la aplicación web</b> que aparece (termina en /exec). Volvé a esta planilla: <b>💹 Finanzas → Cargar la URL publicada a mano</b> y pegala.</li></ol>';
-    html = '<div style="font:14px/1.45 system-ui,Arial;padding:2px 6px">' + (userOff
-      ? '<h2 style="margin:0 0 8px">Falta un permiso (una sola vez)</h2><ol><li>Abrí <a href="https://script.google.com/home/usersettings" target="_blank"><b>este enlace</b></a> y activá <b>«API de Google Apps Script»</b>.</li><li>Esperá 2 o 3 minutos y volvé a tocar <b>💹 Finanzas → Instalar</b>.</li></ol><p style="font-size:13px">¿Ya estaba activado y sigue saliendo esto? Usá el plan B:</p>' + manual
-      : '<h2 style="margin:0 0 8px">Ya casi: falta publicar tu conexión</h2><p style="font-size:13px">Tus carpetas y tu base de datos ya están creadas en tu Drive.</p>' + manual) +
-      (err ? '<p style="font-size:11px;color:#888">Detalle técnico: ' + err.replace(/</g, '&lt;').slice(0, 300) + '</p>' : '') + '</div>';
+    var err = String((dep && dep.error) || ''), badUrl = dep && dep.code === 'url';
+    var pasos = '<ol style="padding-left:18px;margin:6px 0"><li>Arriba: <b>Extensiones → Apps Script</b>.</li><li>Botón azul <b>Implementar → Nueva implementación</b>. Tocá el engranaje ⚙️ y elegí <b>Aplicación web</b>.</li><li><i>Ejecutar como:</i> <b>Yo</b> · <i>Quién tiene acceso:</i> <b>Cualquier usuario</b> → <b>Implementar</b>. Aceptá los permisos.</li><li>Copiá la <b>URL de la aplicación web</b> (termina en /exec), volvé a esta planilla y tocá <b>💹 Finanzas → 2. Pegar mi URL publicada</b>.</li></ol>';
+    html = '<div style="font:14px/1.45 system-ui,Arial;padding:2px 6px">' + (badUrl
+      ? '<h2 style="margin:0 0 8px">Esa URL no sirve</h2><p>' + err + '</p><p style="font-size:13px">La encontrás en Apps Script → <b>Implementar → Gestionar implementaciones</b> → «URL de la aplicación web».</p>'
+      : '<h2 style="margin:0 0 8px">✅ Paso 1 listo</h2><p style="font-size:13px">Ya están creadas tu carpeta y tu base de datos en tu Drive. <b>Último paso (1 minuto): publicá tu conexión.</b></p>' + pasos +
+        '<p style="font-size:12px;color:#555">¿Dudas? Mirá la guía con imágenes en <a href="' + APP_URL + 'instalar.html" target="_blank">instalar</a>.</p>') +
+      (err && !badUrl ? '<p style="font-size:10px;color:#aaa">Ref.: ' + err.replace(/</g, '&lt;').slice(0, 160) + '</p>' : '') + '</div>';
   }
-  try { SpreadsheetApp.getUi().showModalDialog(HtmlService.createHtmlOutput(html).setWidth(500).setHeight(430), APP_NAME); } catch (e) { Logger.log(html); }
+  try { SpreadsheetApp.getUi().showModalDialog(HtmlService.createHtmlOutput(html).setWidth(520).setHeight(440), APP_NAME); } catch (e) { Logger.log(html); }
 }
 /** Solo para el dueño de la app: deja lista la planilla plantilla que se comparte con los clientes. */
 function prepararPlantilla() {
@@ -596,7 +598,7 @@ function prepararPlantilla() {
   ss.rename(APP_NAME + ' — Instalador');
   var sh = ss.getSheetByName('👋 Empezá acá') || ss.insertSheet('👋 Empezá acá', 0);
   sh.clear();
-  sh.getRange(1, 1, 9, 1).setValues([['💹 ' + APP_NAME], [''], ['Instalación en 3 pasos:'], ['1. Ya hiciste la copia ✔'], ['2. Arriba, en el menú, tocá  💹 Finanzas  →  Instalar  y aceptá los permisos de Google.'], ['3. Tocá «Abrir mi app». Tu link personal también te llega por mail.'], [''], ['Tus datos quedan en TU Google Drive. Nadie más tiene acceso.'], ['Si el menú 💹 Finanzas no aparece, recargá la página (F5).']]);
+  sh.getRange(1, 1, 10, 1).setValues([['💹 ' + APP_NAME], [''], ['Instalación:'], ['✔ Ya hiciste la copia.'], ['1. Arriba, en el menú:  💹 Finanzas  →  1. Instalar  (aceptá los permisos de Google).'], ['2. Publicá tu conexión como indica el cartel y pegá la URL en  💹 Finanzas  →  2. Pegar mi URL publicada.'], ['3. Tocá «Abrir mi app». Tu link personal también te llega por mail.'], [''], ['Guía con imágenes: ' + APP_URL + 'instalar.html'], ['Si el menú 💹 Finanzas no aparece, recargá la página (F5).']]);
   sh.getRange(1, 1).setFontSize(18).setFontWeight('bold'); sh.getRange(3, 1).setFontWeight('bold'); sh.setColumnWidth(1, 720);
   ss.getSheets().forEach(function (x) { if (x.getName() !== '👋 Empezá acá') ss.deleteSheet(x); });
   ['DB_ID', 'ROOT_ID', 'TOTALS_ID', 'DEPLOYMENT_ID', 'WEBAPP_URL', 'OWNER_EMAIL', 'GEMINI_API_KEY', 'OAUTH_CLIENT_ID'].forEach(function (k) { props_().deleteProperty(k); });

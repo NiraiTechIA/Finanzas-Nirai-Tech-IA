@@ -26,7 +26,7 @@ t('onOpen agrega el menú 💹 Finanzas', () => { env.onOpen(); assert(env.__.ui
 t('sin la API de Apps Script activada: crea todo y explica el único paso que falta', () => {
   const r = env.instalar();
   assert(r.deploy.error && r.deploy.code === 403);
-  assert(/usersettings/.test(env.__.ui.dialogs.pop()), 'el diálogo lleva al interruptor');
+  assert(/Pegar mi URL publicada/.test(env.__.ui.dialogs.pop()), 'el diálogo explica el último paso');
   assert.strictEqual(env.__.props.DB_ID, plantilla.getId(), 'la copia de la planilla es la base de datos');
   assert(/Base de datos/.test(env.__.files[plantilla.getId()].name));
   assert.strictEqual(env.__.folders[env.__.files[plantilla.getId()].parent].name, 'Base de datos');
@@ -62,8 +62,8 @@ t('prepararPlantilla deja solo la hoja de bienvenida', () => {
 t('plan B: API rechazada → publicación a mano y «Cargar la URL publicada a mano»', () => {
   const o2 = { disabled: true }; const e3 = createEnv({ fetch: (u, o, p) => u.startsWith('https://script.googleapis.com/') ? { code: 403, body: JSON.stringify({ error: { message: 'Apps Script API has not been used in project 123 before or it is disabled.' } }) } : scriptApi(o2)(u, o, p) });
   e3.bindToNewSheet(); const r = e3.instalar(); assert(r.deploy.error);
-  const d = e3.__.ui.dialogs.pop(); assert(/Nueva implementación/.test(d) && /Cargar la URL publicada a mano/.test(d) && /Detalle técnico/.test(d));
-  e3.__.ui.respuesta = 'https://script.google.com/macros/s/AKfy/exec'; e3.cargarUrlManual(); assert(/no es la URL correcta/.test(e3.__.ui.dialogs.pop()), 'rechaza URLs inválidas');
+  const d = e3.__.ui.dialogs.pop(); assert(/Nueva implementación/.test(d) && /Pegar mi URL publicada/.test(d) && /Ref\./.test(d));
+  e3.__.ui.respuesta = 'https://script.google.com/macros/s/AKfy/exec'; e3.cargarUrlManual(); assert(/no es la URL correcta/.test(e3.__.ui.dialogs.pop()) , 'rechaza URLs inválidas');
   e3.__.ui.respuesta = ' https://script.google.com/macros/s/AKfycbMANUAL9xxxxxxxxxxxxxxxxxxxx/exec ';
   e3.cargarUrlManual(); assert(/conectar=AKfycbMANUAL9x+/.test(e3.__.ui.dialogs.pop())); assert.strictEqual(e3.__.props.DEPLOYMENT_ID, 'AKfycbMANUAL9xxxxxxxxxxxxxxxxxxxx'); assert(e3.__.mails.length === 1);
   e3.mostrarLink(); assert(/conectar=AKfycbMANUAL9/.test(e3.__.ui.dialogs.pop()));
