@@ -32,7 +32,7 @@ Mientras esté en "Prueba", solo pueden entrar los "usuarios de prueba".
 > **No uses la plantilla para tus propios datos.** Vos ya tenés tu backend funcionando.
 
 ### 3. Antes de cobrar
-- Completá tu **CUIT** en `v2/terminos.html` y `v2/privacidad.html` (dice "[a completar]").
+- ✔ CUIT cargado en términos y privacidad (20-37978071-8).
 - Hacé que un abogado revise los términos y la privacidad, y consultá a tu contador por la facturación.
 - Respondé las solicitudes del **Botón de arrepentimiento** dentro de las 24 hs, con un código de identificación (por ejemplo `ARR-2026-001`).
 
