@@ -39,7 +39,7 @@ let pass = 0; const ok = n => { pass++; console.log('  ✓', n); };
   // 1) modo local, sin conexión
   const ctxL = await browser.newContext({ viewport: { width: 1280, height: 900 }, locale: 'es-AR', timezoneId: 'America/Argentina/Buenos_Aires' });
   const pl = await newPage(ctxL, false);
-  assert(await pl.isVisible('text=Modo local')); ok('arranca en modo local sin configuración');
+  assert(await pl.isVisible('#syncPill:has-text("Prueba gratis")')); assert(!(await pl.isVisible('text=Sin conexión'))); ok('arranca en modo prueba gratis sin configuración (sin intentar conectarse)');
   await tab(pl, 'importar'); await pl.setInputFiles('[data-file="import"]', FX('mastercard.pdf'));
   await pl.waitForSelector('.imp .pv', { timeout: 15000 });
   assert(await pl.isVisible('text=Lectura genérica')); ok('PDF de banco desconocido sin IA: lectura genérica con pdf.js');

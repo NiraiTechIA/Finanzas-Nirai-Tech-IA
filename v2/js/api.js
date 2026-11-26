@@ -56,7 +56,7 @@ function onCredential(resp) {
   } catch (e) { console.error(e); }
 }
 function initGis() {
-  var c = conn(); if (!c.clientId || window.NIRAI_TEST_TOKEN) return;
+  var c = conn(); if (!isConfigured() || window.NIRAI_TEST_TOKEN) return;   // en la prueba gratis no hace falta Google
   if (window.google && google.accounts && google.accounts.id) return setupGis();
   if (document.getElementById('gis-script')) return;
   var s = document.createElement('script'); s.id = 'gis-script'; s.src = 'https://accounts.google.com/gsi/client'; s.async = true; s.defer = true; s.onload = setupGis;
