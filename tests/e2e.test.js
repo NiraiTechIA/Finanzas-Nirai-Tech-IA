@@ -43,7 +43,7 @@ let pass = 0; const ok = n => { pass++; console.log('  ✓', n); };
   await tab(pl, 'importar'); await pl.setInputFiles('[data-file="import"]', FX('mastercard.pdf'));
   await pl.waitForSelector('.imp .pv', { timeout: 15000 });
   assert(await pl.isVisible('text=Lectura genérica')); ok('PDF de banco desconocido sin IA: lectura genérica con pdf.js');
-  await tab(pl, 'inicio'); assert(await pl.isVisible('a.btn:has-text("Cómo instalarlo")')); assert(await pl.isVisible('a.btn:has-text("Ver planes")'));
+  await tab(pl, 'inicio'); assert(await pl.isVisible('a.btn:has-text("Ver planes")')); assert(!(await pl.isVisible('text=Cómo instalarlo'))); await tab(pl, 'ajustes'); assert(!(await pl.isVisible('text=Ya contrataste'))); assert(!(await pl.isVisible('text=Iniciar sesión'))); assert(!(await pl.isVisible('a[href="instalar.html"]')), 'la prueba no muestra la guía ni la conexión');
   // link personal: conecta el dispositivo y limpia la URL; si es de otra cuenta, borra la copia local anterior
   await pl.evaluate(() => { localStorage.setItem('nirai_conn', JSON.stringify({ url: 'https://script.google.com/macros/s/AKfyOTRA/exec' })); localStorage.setItem('nirai_fin_v2', JSON.stringify({ mov: [{ id: 'x1', fecha: '2026-11-01', mes: '2026-11', descripcion: 'dato de otra cuenta', monto: -1, tipo: 'Gasto', categoria: 'Sin clasificar', estado: 'activo' }] })); });
   await pl.goto(URL + '?conectar=AKfycbTEST_123456789012345678901'); await pl.waitForSelector('#tabs button');
