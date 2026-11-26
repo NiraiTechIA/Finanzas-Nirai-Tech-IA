@@ -59,4 +59,12 @@ t('prepararPlantilla deja solo la hoja de bienvenida', () => {
   const e2 = createEnv(); e2.bindToNewSheet('plantilla'); const msg = e2.prepararPlantilla();
   const ss = e2.SpreadsheetApp.getActiveSpreadsheet(); assert.deepStrictEqual(ss.getSheets().map(x => x.getName()), ['👋 Empezá acá']); assert(/copy/.test(msg));
 });
+t('plan B: API rechazada por el proyecto → publicación a mano y «Ver mi link personal»', () => {
+  const o2 = { disabled: true }; const e3 = createEnv({ fetch: (u, o, p) => u.startsWith('https://script.googleapis.com/') ? { code: 403, body: JSON.stringify({ error: { message: 'Apps Script API has not been used in project 123 before or it is disabled.' } }) } : scriptApi(o2)(u, o, p) });
+  e3.bindToNewSheet(); const r = e3.instalar(); assert(r.deploy.error);
+  const d = e3.__.ui.dialogs.pop(); assert(/Nueva implementación/.test(d) && /Ver mi link personal/.test(d) && /Detalle técnico/.test(d));
+  e3.__.service.url = 'https://script.google.com/macros/s/AKfyMANUAL9/exec';
+  e3.mostrarLink(); assert(/conectar=AKfyMANUAL9/.test(e3.__.ui.dialogs.pop())); assert.strictEqual(e3.__.props.DEPLOYMENT_ID, 'AKfyMANUAL9'); assert(e3.__.mails.length === 1);
+  const n = e3.__.mails.length; e3.instalar(); assert(/conectar=AKfyMANUAL9/.test(e3.__.ui.dialogs.pop()), 'reinstalar respeta la publicación manual');
+});
 console.log(`\n${pass} pruebas del instalador OK`);
