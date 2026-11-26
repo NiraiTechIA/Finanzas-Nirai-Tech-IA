@@ -96,7 +96,7 @@ function hbars(rows, total) {
 /* ============================ Inicio (dashboard) ============================ */
 function banners() {
   var h = '';
-  if (!isConfigured()) h += '<div class="banner">🎁 <div><b>Prueba gratis:</b> tus datos quedan solo en este navegador. ¿Querés tu asistente conectado a <b>tu propio Google Drive</b>, en el celular y la PC, con copias automáticas e IA?</div><a class="btn pri" href="planes.html">Ver planes</a><a class="btn" href="instalar.html">Cómo instalarlo</a><button class="btn ghost" data-act="tab" data-k="ajustes">Ya tengo mi link</button></div>';
+  if (!isConfigured()) h += '<div class="banner">🎁 <div><b>Prueba gratis:</b> tus datos quedan solo en este navegador. ¿Querés tu asistente conectado a <b>tu propio Google Drive</b>, en el celular y la PC, con copias automáticas e IA?</div><a class="btn pri" href="planes.html">Ver planes</a></div>';
   else if (SYNC.status === 'login') h += '<div class="banner bad">🔑 <div>Iniciá sesión con Google para sincronizar.' + (SYNC.queue.length ? ' Hay ' + SYNC.queue.length + ' cambios esperando.' : '') + '</div><button class="btn pri" data-act="tab" data-k="ajustes">Iniciar sesión</button></div>';
   if (lsGet('finanzas_chini_v1') && !DB.cfg.migradoV1) h += '<div class="banner">🗂️ <div>Encontré datos de la versión anterior en este navegador.</div><button class="btn pri" data-act="migrar">Traerlos</button><button class="btn" data-act="noMigrar">Ignorar</button></div>';
   recurrentesPendientes().forEach(function (p) {
@@ -474,7 +474,7 @@ function viewAjustes() {
   if (!isConfigured()) {
     var wa = 'https://wa.me/' + ((window.NIRAI_CONFIG || {}).SUPPORT_WHATSAPP || '5491172373270') + '?text=' + encodeURIComponent('Hola Nirai Tech IA, estoy probando FINANZAS NIRAI TECH IA y quiero contratarlo.');
     h += '<div class="card" style="border:2px solid var(--acc)"><h2>🎁 Estás usando la prueba gratis</h2><p>Todo lo que cargues queda guardado <b>solo en este navegador</b>. Con la versión completa:</p><ul class="tips"><li>☁️ Tus datos se guardan en <b>tu propio Google Drive</b>, con copia de seguridad diaria.</li><li>📱 Usás la misma información en el <b>celular y la PC</b>.</li><li>🤖 La <b>IA</b> lee fotos, capturas y PDF de cualquier banco.</li><li>🧑‍💻 <b>Instalación asistida</b> (o la hacemos nosotros por acceso remoto) y <b>soporte por WhatsApp</b>.</li></ul><p class="small mut">Lo que cargaste en la prueba se pasa solo cuando contratás.</p><div class="row mt"><a class="btn pri" href="planes.html">Ver planes y precios</a><a class="btn" style="background:#25d366;border-color:#25d366;color:#fff" href="' + wa + '" target="_blank" rel="noopener">💬 Quiero contratarlo</a></div>' +
-      '<details class="mt"><summary class="small mut">¿Ya contrataste? Conectá este dispositivo</summary><p class="small">Abrí tu <b>link personal</b> (te llegó por mail al instalar) o pegalo acá:</p><form data-form="link" class="row"><input type="url" name="link" placeholder="https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/v2/?conectar=…" style="flex:1;min-width:240px" required><button class="btn pri">Conectar</button></form></details></div>';
+      '</div>';
   } else h += '<div class="card"><h2>☁️ Google Drive</h2>' + avanzado;
   if (isConfigured()) {
     h += '<div class="row mt">' + (tokenValid() ? '<span class="pill ok">✓ Sesión iniciada' + (t && t.email && t.email !== 'test' ? ': ' + esc(t.email) : '') + '</span><button class="btn ghost small" data-act="logout">Cerrar sesión</button>' : '<div id="gbtn"></div>') + statusPill() + '</div>';

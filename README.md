@@ -4,7 +4,6 @@ Asistente de finanzas personales conectado a Google Drive. Importa resúmenes de
 
 - **App nueva (v2):** <https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/v2/>
 - **Planes y precios:** <https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/v2/planes.html>
-- **Instalación en tu Google Drive:** <https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/v2/instalar.html>
 - **Soporte (WhatsApp oficial de Nirai Tech IA):** [11 7237-3270](https://wa.me/5491172373270)
 - **Versión anterior (la que compartís):** <https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/> — sin cambios
 - **Instalación y puesta en producción:** [docs/INSTALACION.md](docs/INSTALACION.md)

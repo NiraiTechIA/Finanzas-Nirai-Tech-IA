@@ -37,6 +37,8 @@ Mientras esté en "Prueba", solo pueden entrar los "usuarios de prueba".
 - Respondé las solicitudes del **Botón de arrepentimiento** dentro de las 24 hs, con un código de identificación (por ejemplo `ARR-2026-001`).
 
 ## Instalación del cliente
+> La guía `v2/instalar.html` **no está enlazada** en la app ni en la página de planes: se la mandás al cliente **después de que paga**. Quien prueba gratis no ve nada de conexión.
+
 Modalidades: **asistida** (el cliente sigue la guía y vos lo acompañás por WhatsApp) o **remota con RustDesk** (el cliente instala RustDesk, te pasa el código y vos hacés los pasos en su computadora; el inicio de sesión de Google lo hace siempre el cliente).
 
 Ver `v2/instalar.html`: tiene ilustraciones de cada pantalla.
