@@ -585,9 +585,9 @@ function mostrarResultado_(dep) {
     var err = String((dep && dep.error) || ''), badUrl = dep && dep.code === 'url';
     var pasos = '<ol style="padding-left:18px;margin:6px 0"><li>Arriba: <b>Extensiones → Apps Script</b>.</li><li>Botón azul <b>Implementar → Nueva implementación</b>. Tocá el engranaje ⚙️ y elegí <b>Aplicación web</b>.</li><li><i>Ejecutar como:</i> <b>Yo</b> · <i>Quién tiene acceso:</i> <b>Cualquier usuario</b> → <b>Implementar</b>. Aceptá los permisos.</li><li>Copiá la <b>URL de la aplicación web</b> (termina en /exec), volvé a esta planilla y tocá <b>💹 Finanzas → 2. Pegar mi URL publicada</b>.</li></ol>';
     html = '<div style="font:14px/1.45 system-ui,Arial;padding:2px 6px">' + (badUrl
-      ? '<h2 style="margin:0 0 8px">Esa URL no sirve</h2><p>' + err + '</p><p style="font-size:13px">La encontrás en Apps Script → <b>Implementar → Gestionar implementaciones</b> → «URL de la aplicación web».</p>'
+      ? '<h2 style="margin:0 0 8px">Esa URL no sirve</h2><p>' + err + '</p><p style="font-size:13px">La encontrás en Apps Script → <b>Implementar → Gestionar implementaciones</b> → «URL de la aplicación web». ¿No la encontrás? WhatsApp <a href="https://wa.me/5491172373270" target="_blank">11 7237-3270</a>.</p>'
       : '<h2 style="margin:0 0 8px">✅ Paso 1 listo</h2><p style="font-size:13px">Ya están creadas tu carpeta y tu base de datos en tu Drive. <b>Último paso (1 minuto): publicá tu conexión.</b></p>' + pasos +
-        '<p style="font-size:12px;color:#555">¿Dudas? Mirá la guía con imágenes en <a href="' + APP_URL + 'instalar.html" target="_blank">instalar</a>.</p>') +
+        '<p style="font-size:12px;color:#555">¿Dudas? Mirá la <a href="' + APP_URL + 'instalar.html" target="_blank">guía con imágenes</a> o pedí asistencia por WhatsApp al <a href="https://wa.me/5491172373270" target="_blank">11 7237-3270</a>.</p>') +
       (err && !badUrl ? '<p style="font-size:10px;color:#aaa">Ref.: ' + err.replace(/</g, '&lt;').slice(0, 160) + '</p>' : '') + '</div>';
   }
   try { SpreadsheetApp.getUi().showModalDialog(HtmlService.createHtmlOutput(html).setWidth(520).setHeight(440), APP_NAME); } catch (e) { Logger.log(html); }
@@ -598,7 +598,7 @@ function prepararPlantilla() {
   ss.rename(APP_NAME + ' — Instalador');
   var sh = ss.getSheetByName('👋 Empezá acá') || ss.insertSheet('👋 Empezá acá', 0);
   sh.clear();
-  sh.getRange(1, 1, 10, 1).setValues([['💹 ' + APP_NAME], [''], ['Instalación:'], ['✔ Ya hiciste la copia.'], ['1. Arriba, en el menú:  💹 Finanzas  →  1. Instalar  (aceptá los permisos de Google).'], ['2. Publicá tu conexión como indica el cartel y pegá la URL en  💹 Finanzas  →  2. Pegar mi URL publicada.'], ['3. Tocá «Abrir mi app». Tu link personal también te llega por mail.'], [''], ['Guía con imágenes: ' + APP_URL + 'instalar.html'], ['Si el menú 💹 Finanzas no aparece, recargá la página (F5).']]);
+  sh.getRange(1, 1, 11, 1).setValues([['💹 ' + APP_NAME], [''], ['Instalación:'], ['✔ Ya hiciste la copia.'], ['1. Arriba, en el menú:  💹 Finanzas  →  1. Instalar  (aceptá los permisos de Google).'], ['2. Publicá tu conexión como indica el cartel y pegá la URL en  💹 Finanzas  →  2. Pegar mi URL publicada.'], ['3. Tocá «Abrir mi app». Tu link personal también te llega por mail.'], [''], ['Guía con imágenes: ' + APP_URL + 'instalar.html'], ['Si el menú 💹 Finanzas no aparece, recargá la página (F5).'], ['¿No pudiste? Asistencia por WhatsApp (Nirai Tech IA): 11 7237-3270 — https://wa.me/5491172373270']]);
   sh.getRange(1, 1).setFontSize(18).setFontWeight('bold'); sh.getRange(3, 1).setFontWeight('bold'); sh.setColumnWidth(1, 720);
   ss.getSheets().forEach(function (x) { if (x.getName() !== '👋 Empezá acá') ss.deleteSheet(x); });
   ['DB_ID', 'ROOT_ID', 'TOTALS_ID', 'DEPLOYMENT_ID', 'WEBAPP_URL', 'OWNER_EMAIL', 'GEMINI_API_KEY', 'OAUTH_CLIENT_ID'].forEach(function (k) { props_().deleteProperty(k); });

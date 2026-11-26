@@ -94,6 +94,10 @@
 <li><b>Perdí mi link personal:</b> en la planilla, tocá <span class="t">💹 Finanzas</span> → <span class="t">Ver mi link personal</span>.</li>
 </ul>
 
+<div class="box" style="border-left:4px solid #25d366"><h3 style="margin-top:2px">¿No pudiste instalarlo? Te ayudamos</h3>
+<p>Escribinos por WhatsApp al número oficial de <b>Nirai Tech IA</b>: <a id="waLink" href="https://wa.me/5491172373270" target="_blank" rel="noopener"><b>11 7237-3270</b></a>. Te acompañamos paso a paso.</p>
+<p><a id="waBtn" class="btn pri" style="background:#25d366;border-color:#25d366;color:#fff" href="https://wa.me/5491172373270" target="_blank" rel="noopener">💬 Pedir asistencia por WhatsApp</a></p></div>
+
 <p class="legal-note">Al instalar aceptás los <a href="terminos.html">Términos y condiciones</a> y la <a href="privacidad.html">Política de privacidad</a>. ¿Dudas? Escribinos a <a id="mail" href="#"></a>.</p>
 <p><a href="./">← Volver a la app</a> · <a href="arrepentimiento.html"><b>Botón de arrepentimiento</b></a></p>
 </main>
@@ -101,6 +105,8 @@
 <script>
 var C = window.NIRAI_CONFIG || {}, b = document.getElementById('btnCopia'), m = document.getElementById('mail');
 m.textContent = C.CONTACT_EMAIL || ''; m.href = 'mailto:' + (C.CONTACT_EMAIL || '');
+var wa = 'https://wa.me/' + (C.SUPPORT_WHATSAPP || '5491172373270') + '?text=' + encodeURIComponent('Hola Nirai Tech IA, necesito ayuda para instalar FINANZAS NIRAI TECH IA.');
+document.getElementById('waLink').href = wa; document.getElementById('waBtn').href = wa;
 if (C.INSTALL_TEMPLATE_URL) b.href = C.INSTALL_TEMPLATE_URL;
 else { b.href = 'mailto:' + (C.CONTACT_EMAIL || '') + '?subject=' + encodeURIComponent('Quiero instalar FINANZAS NIRAI TECH IA'); b.textContent = 'Pedir mi instalador'; document.getElementById('paso1').textContent = 'Escribinos y te mandamos el enlace de instalación.'; }
 </script>
