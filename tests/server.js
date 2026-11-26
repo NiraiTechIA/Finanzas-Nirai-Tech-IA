@@ -35,6 +35,13 @@ function makeServer(port) {
   });
   env.setup();
   const srv = http.createServer((req, res) => {
+    if (req.url.startsWith('/api?') && req.method === 'GET') {
+      const qs = Object.fromEntries(new URL(req.url, 'http://x').searchParams);
+      try { const out = env.doGet({ parameter: qs }).getContent(); srv.gets = (srv.gets || 0) + 1; res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(out); }
+      catch (e) { res.writeHead(500); res.end(String(e.stack)); }
+      return;
+    }
+    if (req.url === '/api' && req.method === 'POST' && srv.failPost) { req.socket.destroy(); return; }   // simula el backend que rechaza POST
     if (req.url === '/api' && req.method === 'POST') {
       let b = ''; req.on('data', c => b += c); req.on('end', () => {
         try { const out = env.doPost({ postData: { contents: b } }).getContent(); res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(out); }
