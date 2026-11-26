@@ -22,7 +22,7 @@ const opts = { disabled: true };
 const env = createEnv({ fetch: scriptApi(opts), props: { OWNER_EMAIL: '', OAUTH_CLIENT_ID: '' } });
 delete env.__.props.OWNER_EMAIL; delete env.__.props.OAUTH_CLIENT_ID;
 const plantilla = env.bindToNewSheet();
-t('onOpen agrega el menú 💹 Finanzas', () => { env.onOpen(); assert(env.__.ui.menu); });
+t('onOpen agrega el menú 📊 Finanzas', () => { env.onOpen(); assert(env.__.ui.menu); });
 t('sin la API de Apps Script activada: crea todo y explica el único paso que falta', () => {
   const r = env.instalar();
   assert(r.deploy.error && r.deploy.code === 403);

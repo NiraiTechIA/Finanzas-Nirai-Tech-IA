@@ -41,11 +41,11 @@ Modalidades: **asistida** (el cliente sigue la guía y vos lo acompañás por Wh
 
 Ver `v2/instalar.html`: tiene ilustraciones de cada pantalla.
 1. **Crear mi copia** (link de la plantilla).
-2. En la copia: **💹 Finanzas → 1. Instalar**, aceptar los permisos. Crea la carpeta y la base de datos.
+2. En la copia: **📊 Finanzas → 1. Instalar**, aceptar los permisos. Crea la carpeta y la base de datos.
 3. **Publicar la conexión** (1 minuto):
    - Extensiones → Apps Script → Implementar → Nueva implementación → ⚙️ Aplicación web.
    - Ejecutar como: Yo · Quién tiene acceso: **Cualquier usuario** → Implementar.
-   - Copiar la URL y pegarla en **💹 Finanzas → 2. Pegar mi URL publicada**.
+   - Copiar la URL y pegarla en **📊 Finanzas → 2. Pegar mi URL publicada**.
 4. **Abrir mi app** e iniciar sesión. El link personal también le llega por mail.
 
 > La publicación automática (API de Apps Script) suele fallar en cuentas comunes. Por eso el paso 3 es manual y está explicado como un paso normal. Si en alguna cuenta funciona sola, el paso 3 se saltea.
@@ -54,7 +54,7 @@ La IA es opcional: el cliente pega su clave gratuita de Google AI Studio en **Aj
 
 ## Actualizaciones
 - **App (pantallas, lectores, reportes):** se actualiza sola para todos al publicar en GitHub.
-- **Backend (`Code.gs`):** cambia poco. Si cambia, el cliente pega el nuevo código en su copia y vuelve a tocar **💹 Finanzas → Instalar**. Su link no cambia.
+- **Backend (`Code.gs`):** cambia poco. Si cambia, el cliente pega el nuevo código en su copia y vuelve a tocar **📊 Finanzas → Instalar**. Su link no cambia.
 
 ## Más adelante: dominio propio y código privado (Cloudflare Pages)
 Cuando tengas clientes:
