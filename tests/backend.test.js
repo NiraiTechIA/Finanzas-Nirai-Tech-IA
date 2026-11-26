@@ -114,7 +114,7 @@ t('copia de seguridad diaria crea una copia de la base', () => {
 t('vía GET: pedido completo en la URL y en partes (para backends que rechazan POST)', () => {
   const enc = o => Buffer.from(JSON.stringify(o), 'utf8').toString('base64').replace(/\+/g, '-').replace(/\//g, '_');
   const g = params => JSON.parse(env.doGet({ parameter: params }).getContent());
-  assert.strictEqual(g({}).version, 5);
+  assert.strictEqual(g({}).version, 6);
   const r = g({ q: enc({ action: 'ping', idToken: 'token-valido' }) }); assert(r.ok && r.data.ok);
   assert(!g({ q: enc({ action: 'ping', idToken: 'basura' }) }).ok, 'sigue exigiendo el token');
   const big = enc({ action: 'uploadFile', idToken: 'token-valido', payload: { name: 'grande.pdf', mime: 'application/pdf', base64: Buffer.alloc(30000, 7).toString('base64'), kind: 'resumen' } });
