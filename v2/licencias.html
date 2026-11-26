@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Códigos de activación — Nirai Tech IA</title>
+<link rel="icon" href="icon.svg"><link rel="stylesheet" href="css/app.css"><link rel="stylesheet" href="css/doc.css">
+<style>textarea,input{width:100%;font:inherit;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:inherit}textarea{min-height:90px;font-family:monospace;font-size:12px}
+.out{word-break:break-all;font-family:monospace;font-size:12px;background:var(--soft);border-radius:8px;padding:10px}.hide{display:none}table{width:100%;font-size:13px}td{padding:4px 6px;border-bottom:1px solid var(--line)}</style>
+</head><body><main class="doc">
+<header class="top"><span style="font-size:22px">📊</span><b>FINANZAS <span style="color:var(--acc)">NIRAI TECH IA</span></b></header>
+<h1>Códigos de activación</h1>
+<p class="small mut">Página interna del dueño. Sin tu clave privada no genera nada: no hace falta esconderla.</p>
+
+<div class="box" id="boxKey">
+<h3 style="margin-top:2px">1. Tu clave privada (una sola vez por dispositivo)</h3>
+<p class="small">Pegá el texto completo del archivo <b>clave-privada-licencias.txt</b>. Queda guardada solo en este navegador. <b>No se la pases a nadie, tampoco a mí.</b></p>
+<textarea id="priv" placeholder='{"kty":"EC","crv":"P-256","d":"…","x":"…","y":"…"}'></textarea>
+<p><button class="btn pri" id="saveKey">Guardar clave en este dispositivo</button> <span id="keyMsg" class="small"></span></p>
+</div>
+<div class="box hide" id="boxOk"><p>🔑 Clave cargada en este dispositivo. <button class="btn ghost small" id="forget">Borrarla de este dispositivo</button></p></div>
+
+<div class="box">
+<h3 style="margin-top:2px">2. Datos del cliente</h3>
+<p><label>Gmail del cliente (la cuenta de Google que va a usar)<br><input id="email" type="email" inputmode="email" autocomplete="off" placeholder="cliente@gmail.com"></label></p>
+<p><label>Celular del cliente (opcional, para mandárselo por WhatsApp)<br><input id="cel" type="tel" inputmode="tel" placeholder="11 2345-6789"></label></p>
+<p><button class="btn pri" id="gen">Generar link de activación</button> <span id="genMsg" class="small"></span></p>
+<div id="res" class="hide">
+<p class="small mut">Link para el cliente:</p><div class="out" id="link"></div>
+<p class="row mt"><button class="btn" id="copy">Copiar mensaje</button> <a class="btn" id="wa" target="_blank" rel="noopener" style="background:#25d366;border-color:#25d366;color:#fff">💬 Enviar por WhatsApp</a></p>
+</div>
+</div>
+
+<div class="box"><h3 style="margin-top:2px">Generados en este dispositivo</h3><div id="hist" class="small mut">Todavía ninguno.</div></div>
+</main>
+<script src="js/config.js"></script>
+<script>
+(function () {
+  var C = window.NIRAI_CONFIG || {}, PUB = C.LICENSE_KEY || {}, KEY = 'nirai_lic_priv', HIST = 'nirai_lic_hist';
+  var APP = C.TRIAL_URL || (location.origin + location.pathname.replace(/[^/]*$/, ''));
+  var $ = function (id) { return document.getElementById(id); };
+  function b64u(bytes) { var s = ''; bytes = new Uint8Array(bytes); for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+  function getKey() { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; } }
+  function showKey() { var k = getKey(); $('boxKey').classList.toggle('hide', !!k); $('boxOk').classList.toggle('hide', !k); }
+  function today() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function hist() { try { return JSON.parse(localStorage.getItem(HIST) || '[]'); } catch (e) { return []; } }
+  function showHist() { var h = hist(); if (!h.length) return; $('hist').innerHTML = '<table>' + h.slice().reverse().map(function (x) { return '<tr><td>' + x.fecha + '</td><td>' + x.email.replace(/</g, '&lt;') + '</td></tr>'; }).join('') + '</table>'; }
+  $('saveKey').onclick = function () {
+    var k; try { k = JSON.parse($('priv').value.trim()); } catch (e) { $('keyMsg').textContent = '❌ No es el texto del archivo (tiene que empezar con { y terminar con }).'; return; }
+    if (!k.d || k.x !== PUB.x || k.y !== PUB.y) { $('keyMsg').textContent = '❌ Esa clave no corresponde a la app publicada.'; return; }
+    crypto.subtle.importKey('jwk', { kty: 'EC', crv: 'P-256', x: k.x, y: k.y, d: k.d, ext: true }, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']).then(function () {
+      localStorage.setItem(KEY, JSON.stringify({ kty: 'EC', crv: 'P-256', x: k.x, y: k.y, d: k.d })); $('priv').value = ''; showKey();
+    }).catch(function () { $('keyMsg').textContent = '❌ La clave está dañada.'; });
+  };
+  $('forget').onclick = function () { if (confirm('¿Borrar la clave de este dispositivo? Vas a tener que pegarla de nuevo para generar códigos.')) { localStorage.removeItem(KEY); showKey(); } };
+  $('gen').onclick = function () {
+    var k = getKey(), email = $('email').value.trim().toLowerCase();
+    $('genMsg').textContent = '';
+    if (!k) { $('genMsg').textContent = '❌ Primero cargá tu clave privada (paso 1).'; return; }
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { $('genMsg').textContent = '❌ Revisá el Gmail.'; return; }
+    var data = new TextEncoder().encode('v1|' + email + '|' + today());
+    crypto.subtle.importKey('jwk', Object.assign({ ext: true }, k), { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign'])
+      .then(function (key) { return crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, key, data); })
+      .then(function (sig) {
+        var link = APP + '?activar=' + b64u(data) + '.' + b64u(sig);
+        var msg = '¡Gracias por tu compra! Para activar FINANZAS NIRAI TECH IA:\n1) Abrí este link: ' + link + '\n2) Tocá «Conectar con Google» y elegí tu cuenta ' + email + '\n3) Aceptá el permiso y listo.\nGuía con imágenes: ' + APP + 'instalar.html\nCualquier duda, escribinos por acá.';
+        $('link').textContent = link; $('res').classList.remove('hide');
+        var cel = $('cel').value.replace(/\D/g, ''); if (cel && cel.length <= 10) cel = '549' + cel.replace(/^0/, '').replace(/^(\d{2,4})15/, '$1');
+        $('wa').href = 'https://wa.me/' + cel + '?text=' + encodeURIComponent(msg);
+        $('copy').onclick = function () { navigator.clipboard.writeText(msg).then(function () { $('copy').textContent = '✓ Copiado'; }); };
+        var h = hist(); h.push({ fecha: today(), email: email }); localStorage.setItem(HIST, JSON.stringify(h)); showHist();
+      }).catch(function (e) { $('genMsg').textContent = '❌ ' + e.message; });
+  };
+  showKey(); showHist();
+})();
+</script>
+</body></html>

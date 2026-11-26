@@ -5,9 +5,12 @@
 ## Cómo funciona para el cliente (modo directo, desde noviembre 2026)
 - **No se instala nada.** El cliente abre su link, toca **Conectar con Google**, acepta el permiso y listo. Funciona igual desde el **celular** o la PC.
 - La app usa Google Drive y Google Sheets directamente desde el navegador, con el permiso **`drive.file`**: solo ve los archivos que ella misma crea. Los datos quedan en **el Drive del cliente** (carpeta *FINANZAS NIRAI TECH IA*) y vos no los ves.
-- Link para clientes que pagaron: **`https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/v2/?conectar=google`** + la guía `https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/v2/instalar.html`.
-- Quien entra a `/v2/` sin ese link usa la **prueba gratis** (datos solo en el navegador) y no ve nada de Google.
-- ⚠️ El link es el mismo para todos los clientes: no es una llave. Alguien que lo reciba de un cliente podría usarlo. Para bloquearlo de verdad hace falta un servidor de licencias (se puede agregar más adelante).
+- **Código de activación atado al Gmail del cliente.** Lo generás en tu página privada `https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/v2/licencias.html` (no está enlazada en ningún lado y sin tu clave privada no sirve). Ponés el Gmail del cliente → te da el link `…/v2/?activar=CÓDIGO` y el botón para mandárselo por WhatsApp con las instrucciones.
+- El código está **firmado** con tu clave privada (nadie puede inventar uno) y la app solo conecta si la cuenta de Google es **el mismo Gmail** del código. Si un cliente pasa el link, a otra persona no le funciona. No vence.
+- **Clave privada:** archivo `clave-privada-licencias.txt`. Guardalo en un lugar seguro (por ejemplo, en tu gestor de contraseñas o en una nota privada). **No se la pases a nadie.** Si la perdés, no podés generar códigos nuevos (los ya entregados siguen andando) y hay que crear un par de claves nuevo. La clave pública está en `v2/js/config.js` → `LICENSE_KEY`.
+- **Contacto mensual:** cada 30 días la app le muestra al cliente «¿Cómo te está yendo con la app?» con un botón de WhatsApp a tu número. No bloquea nada.
+- Quien entra a `/v2/` sin código usa la **prueba gratis** (datos solo en el navegador) y no ve nada de Google.
+- Límite: alguien que sepa programar podría modificar la app en su navegador para saltear el código. Para un cliente común no es un problema; bloquearlo del todo requiere un servidor de licencias.
 - Diferencias con la instalación vieja (planilla + Apps Script): no hay carpeta «Entrada» que se revise sola ni copia a las 3 AM. La copia de seguridad se hace una vez por día **al abrir la app**. Google da el permiso por **1 hora**: después aparece el botón «Conectar con Google» y se renueva con un toque (lo cargado mientras tanto queda guardado y se sube solo).
 - Las instalaciones viejas con link `?conectar=AKfy…` (la tuya, por ejemplo) **siguen funcionando igual**.
 
@@ -31,10 +34,11 @@ Si falta el paso 1, la app avisa: «Falta activar Google Drive API / Sheets API�
 - Respondé las solicitudes del **Botón de arrepentimiento** dentro de las 24 hs, con un código de identificación (por ejemplo `ARR-2026-001`).
 
 ## Activación del cliente
-> La guía `v2/instalar.html` **no está enlazada** en la app ni en la página de planes: se la mandás al cliente **después de que paga**, junto con el link `?conectar=google`.
+> La guía `v2/instalar.html` **no está enlazada** en la app ni en la página de planes. El mensaje que arma `licencias.html` ya incluye el link de activación y el de la guía.
 
+0. Pedile al cliente **el Gmail que va a usar** y generá su link en `licencias.html`.
 1. El cliente abre el link (celular o PC) y toca **Conectar con Google**.
-2. Elige su cuenta y acepta el permiso (si aparece una casilla, la tilda).
+2. Elige **esa** cuenta y acepta el permiso (si aparece una casilla, la tilda).
 3. Listo: en su Drive aparece la carpeta con la base de datos, los resúmenes, las copias y la planilla **Totales**.
 
 Si necesita ayuda: **asistida** por WhatsApp o **remota con RustDesk** (el inicio de sesión de Google lo hace siempre el cliente).
