@@ -89,13 +89,14 @@ function api(action, payload) {
   return getToken().then(function (tok) {
     return fetch(c.url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: action, payload: payload || {}, idToken: tok, device: deviceId() }), redirect: 'follow' });
   }).then(function (r) {
-    if (!r.ok) throw new Error('El servidor respondió ' + r.status);
+    if (!r.ok) throw new Error('Tu backend respondió ' + r.status);
     return r.json();
-  }).then(function (j) {
+  }, function (e) { throw netError(e); }).then(function (j) {
     if (!j.ok) { if (j.auth) { localStorage.removeItem(LS_TOK); SYNC.status = 'login'; } throw new Error(j.error || 'Error del servidor'); }
     return j.data;
   });
 }
+function netError(e) { return /Failed to fetch|NetworkError|Load failed/i.test(e && e.message || '') ? new Error('No se pudo conectar con tu backend de Google. Revisá tu internet y que esté publicado como «Aplicación web» con acceso «Cualquier usuario».') : e; }
 function aiCall(p) { return api('ai', Object.assign({ categorias: catNames() }, p)); }
 function canUseAI() { return isConfigured() && SYNC.ai && SYNC.status !== 'login' && SYNC.status !== 'local'; }
 function isOnline() { return isConfigured() && (SYNC.status === 'ok' || SYNC.status === 'saving'); }
@@ -130,7 +131,7 @@ function pull() {
     return true;
   }).catch(function (e) { SYNC.error = e.message; SYNC.status = /AUTH/.test(e.message) ? 'login' : 'offline'; UI.refreshStatus(); return false; });
 }
-function connectNow() { if (!isConfigured()) { SYNC.status = 'local'; UI.refreshStatus(); return Promise.resolve(); } if (!tokenValid()) { SYNC.status = 'login'; UI.refreshStatus(); return Promise.resolve(); } return pull().then(function () { return flush(); }); }
+function connectNow() { if (!isConfigured()) { SYNC.status = 'local'; UI.refreshStatus(); return Promise.resolve(); } if (!tokenValid()) { SYNC.status = 'login'; UI.refreshStatus(); return Promise.resolve(); } SYNC.status = 'connecting'; SYNC.error = ''; UI.refreshStatus(); return pull().then(function () { return flush(); }); }
 function startSync() {
   initGis(); connectNow();
   setInterval(function () { if (document.visibilityState === 'visible' && isConfigured() && tokenValid() && !UI.busy()) pull(); }, 90000);
