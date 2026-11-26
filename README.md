@@ -2,6 +2,10 @@
 
 Asistente de finanzas personales conectado a Google Drive. Importa resúmenes de tarjeta y de Mercado Pago, registra gastos e ingresos con mensajes en lenguaje natural y muestra dashboard, reportes y alertas.
 
+[![Ver el video (46 s)](docs/video-promo.jpg)](https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/v2/media/promo.mp4)
+
+▶️ [Ver el video promocional](https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/v2/media/promo.mp4)
+
 - **App nueva (v2):** <https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/v2/>
 - **Planes y precios:** <https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/v2/planes.html>
 - **Soporte (WhatsApp oficial de Nirai Tech IA):** [11 7237-3270](https://wa.me/5491172373270)
