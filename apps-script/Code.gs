@@ -12,7 +12,7 @@
  *     └── Reportes mensuales/       (planilla "Totales" para compartir con tu asistente)
  *
  * INSTALACIÓN PARA CLIENTES (3 pasos): hacer una copia de la planilla plantilla →
- * menú «💹 Finanzas → Instalar» → abrir el link personal que aparece (y llega por mail).
+ * menú «📊 Finanzas → Instalar» → abrir el link personal que aparece (y llega por mail).
  *
  * Propiedades del script (las crea instalar()/setup(); se pueden editar en Configuración del proyecto):
  *   OWNER_EMAIL       Gmail del dueño (único usuario autorizado). Se toma solo de quien instala.
@@ -24,7 +24,7 @@
  */
 
 var APP_NAME = 'FINANZAS NIRAI TECH IA';
-var BACKEND_VERSION = 7;
+var BACKEND_VERSION = 8;
 var APP_URL = 'https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/v2/';
 // ID de cliente OAuth de la app publicada (es público: identifica a la app, no da acceso a nada)
 var DEFAULT_CLIENT_ID = '288188064237-aatf9mti4ioim04pup4m4ok9abdp16ub.apps.googleusercontent.com';
@@ -516,7 +516,7 @@ function aiTask_(p) {
 /* =========================== Instalación en 3 pasos (planilla plantilla) =========================== */
 function onOpen() {
   try {
-    SpreadsheetApp.getUi().createMenu('💹 Finanzas')
+    SpreadsheetApp.getUi().createMenu('📊 Finanzas')
       .addItem('1. Instalar', 'instalar')
       .addItem('2. Pegar mi URL publicada', 'cargarUrlManual')
       .addSeparator()
@@ -583,7 +583,7 @@ function mostrarResultado_(dep) {
       '<p style="font-size:12px;color:#555">Tu link personal (también te llegó por mail, para abrirlo en el celular):<br><input style="width:100%;font-size:12px" readonly value="' + link + '" onclick="this.select()"></p></div>';
   } else {
     var err = String((dep && dep.error) || ''), badUrl = dep && dep.code === 'url';
-    var pasos = '<ol style="padding-left:18px;margin:6px 0"><li>Arriba: <b>Extensiones → Apps Script</b>.</li><li>Botón azul <b>Implementar → Nueva implementación</b>. Tocá el engranaje ⚙️ y elegí <b>Aplicación web</b>.</li><li><i>Ejecutar como:</i> <b>Yo</b> · <i>Quién tiene acceso:</i> <b>Cualquier usuario</b> → <b>Implementar</b>. Aceptá los permisos.</li><li>Copiá la <b>URL de la aplicación web</b> (termina en /exec), volvé a esta planilla y tocá <b>💹 Finanzas → 2. Pegar mi URL publicada</b>.</li></ol>';
+    var pasos = '<ol style="padding-left:18px;margin:6px 0"><li>Arriba: <b>Extensiones → Apps Script</b>.</li><li>Botón azul <b>Implementar → Nueva implementación</b>. Tocá el engranaje ⚙️ y elegí <b>Aplicación web</b>.</li><li><i>Ejecutar como:</i> <b>Yo</b> · <i>Quién tiene acceso:</i> <b>Cualquier usuario</b> → <b>Implementar</b>. Aceptá los permisos.</li><li>Copiá la <b>URL de la aplicación web</b> (termina en /exec), volvé a esta planilla y tocá <b>📊 Finanzas → 2. Pegar mi URL publicada</b>.</li></ol>';
     html = '<div style="font:14px/1.45 system-ui,Arial;padding:2px 6px">' + (badUrl
       ? '<h2 style="margin:0 0 8px">Esa URL no sirve</h2><p>' + err + '</p><p style="font-size:13px">La encontrás en Apps Script → <b>Implementar → Gestionar implementaciones</b> → «URL de la aplicación web». ¿No la encontrás? WhatsApp <a href="https://wa.me/5491172373270" target="_blank">11 7237-3270</a>.</p>'
       : '<h2 style="margin:0 0 8px">✅ Paso 1 listo</h2><p style="font-size:13px">Ya están creadas tu carpeta y tu base de datos en tu Drive. <b>Último paso (1 minuto): publicá tu conexión.</b></p>' + pasos +
@@ -598,7 +598,7 @@ function prepararPlantilla() {
   ss.rename(APP_NAME + ' — Instalador');
   var sh = ss.getSheetByName('👋 Empezá acá') || ss.insertSheet('👋 Empezá acá', 0);
   sh.clear();
-  sh.getRange(1, 1, 11, 1).setValues([['💹 ' + APP_NAME], [''], ['Instalación:'], ['✔ Ya hiciste la copia.'], ['1. Arriba, en el menú:  💹 Finanzas  →  1. Instalar  (aceptá los permisos de Google).'], ['2. Publicá tu conexión como indica el cartel y pegá la URL en  💹 Finanzas  →  2. Pegar mi URL publicada.'], ['3. Tocá «Abrir mi app». Tu link personal también te llega por mail.'], [''], ['Guía con imágenes: ' + APP_URL + 'instalar.html'], ['Si el menú 💹 Finanzas no aparece, recargá la página (F5).'], ['¿No pudiste? Asistencia por WhatsApp (Nirai Tech IA): 11 7237-3270 — https://wa.me/5491172373270']]);
+  sh.getRange(1, 1, 11, 1).setValues([['📊 ' + APP_NAME], [''], ['Instalación:'], ['✔ Ya hiciste la copia.'], ['1. Arriba, en el menú:  📊 Finanzas  →  1. Instalar  (aceptá los permisos de Google).'], ['2. Publicá tu conexión como indica el cartel y pegá la URL en  📊 Finanzas  →  2. Pegar mi URL publicada.'], ['3. Tocá «Abrir mi app». Tu link personal también te llega por mail.'], [''], ['Guía con imágenes: ' + APP_URL + 'instalar.html'], ['Si el menú 📊 Finanzas no aparece, recargá la página (F5).'], ['¿No pudiste? Asistencia por WhatsApp (Nirai Tech IA): 11 7237-3270 — https://wa.me/5491172373270']]);
   sh.getRange(1, 1).setFontSize(18).setFontWeight('bold'); sh.getRange(3, 1).setFontWeight('bold'); sh.setColumnWidth(1, 720);
   ss.getSheets().forEach(function (x) { if (x.getName() !== '👋 Empezá acá') ss.deleteSheet(x); });
   ['DB_ID', 'ROOT_ID', 'TOTALS_ID', 'DEPLOYMENT_ID', 'WEBAPP_URL', 'OWNER_EMAIL', 'GEMINI_API_KEY', 'OAUTH_CLIENT_ID'].forEach(function (k) { props_().deleteProperty(k); });

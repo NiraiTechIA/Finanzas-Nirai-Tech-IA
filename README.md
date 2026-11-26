@@ -1,4 +1,4 @@
-# 💹 FINANZAS NIRAI TECH IA
+# 📊 FINANZAS NIRAI TECH IA
 
 Asistente de finanzas personales conectado a Google Drive. Importa resúmenes de tarjeta y de Mercado Pago, registra gastos e ingresos con mensajes en lenguaje natural y muestra dashboard, reportes y alertas.
 
