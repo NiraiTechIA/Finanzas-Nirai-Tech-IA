@@ -24,7 +24,7 @@
  */
 
 var APP_NAME = 'FINANZAS NIRAI TECH IA';
-var BACKEND_VERSION = 5;
+var BACKEND_VERSION = 6;
 var APP_URL = 'https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/v2/';
 // ID de cliente OAuth de la app publicada (es público: identifica a la app, no da acceso a nada)
 var DEFAULT_CLIENT_ID = '288188064237-aatf9mti4ioim04pup4m4ok9abdp16ub.apps.googleusercontent.com';
@@ -519,32 +519,33 @@ function onOpen() {
     SpreadsheetApp.getUi().createMenu('💹 Finanzas')
       .addItem('Instalar (o reparar)', 'instalar')
       .addItem('Ver mi link personal', 'mostrarLink')
+      .addItem('Cargar la URL publicada a mano', 'cargarUrlManual')
       .addToUi();
   } catch (e) { }
 }
 function personalLink_() { var id = prop_('DEPLOYMENT_ID'); return id ? APP_URL + '?conectar=' + id : ''; }
 /** Paso 2: crea carpetas, base y tareas, publica el backend y entrega el link personal. */
 function instalar() {
-  var log = setup(), dep = implementacionManual_();
-  if (!dep) {
-    try { dep = desplegar_(); }
-    catch (e) { dep = { error: String(e.message || e), code: e.code || 0 }; Logger.log('Publicación automática falló: ' + dep.error); }
-  }
+  var log = setup(), dep;
+  try { dep = desplegar_(); }
+  catch (e) { dep = { error: String(e.message || e), code: e.code || 0 }; Logger.log('Publicación automática falló: ' + dep.error); }
   if (dep.id) { guardarImplementacion_(dep); enviarLink_(); }
   mostrarResultado_(dep);
   return { log: log, deploy: dep };
 }
-/** Si el script ya fue publicado a mano (Implementar → Nueva implementación → Aplicación web), usa esa URL. */
-function implementacionManual_() {
-  try {
-    var url = ScriptApp.getService().getUrl() || '', m = url.match(/\/macros\/s\/([A-Za-z0-9_-]+)\/exec/);
-    if (m) return { id: m[1], url: url, manual: true };
-  } catch (e) { }
-  return null;
+/** Plan B: el dueño publica a mano y pega la «URL de la aplicación web» (Implementar → Gestionar implementaciones). */
+function cargarUrlManual() {
+  var ui = SpreadsheetApp.getUi();
+  var r = ui.prompt(APP_NAME, 'Pegá la «URL de la aplicación web» (la copiás en Apps Script → Implementar → Gestionar implementaciones). Termina en /exec.', ui.ButtonSet.OK_CANCEL);
+  if (r.getSelectedButton() !== ui.Button.OK) return;
+  var url = String(r.getResponseText() || '').trim(), m = url.match(/^https:\/\/script\.google\.com\/(?:a\/[^/]+\/)?macros\/s\/([A-Za-z0-9_-]{20,})\/exec/);
+  if (!m) { mostrarResultado_({ error: 'Esa no es la URL correcta. Tiene que empezar con https://script.google.com/macros/s/ y terminar en /exec.', code: 'url' }); return; }
+  if (!prop_('DB_ID')) setup();
+  guardarImplementacion_({ id: m[1], url: url }); enviarLink_();
+  mostrarResultado_({ id: m[1] });
 }
 function guardarImplementacion_(dep) { props_().setProperty('DEPLOYMENT_ID', dep.id); props_().setProperty('WEBAPP_URL', dep.url); }
 function mostrarLink() {
-  if (!prop_('DEPLOYMENT_ID')) { var m = implementacionManual_(); if (m) { if (!prop_('DB_ID')) setup(); guardarImplementacion_(m); enviarLink_(); } }
   mostrarResultado_(prop_('DEPLOYMENT_ID') ? { id: prop_('DEPLOYMENT_ID') } : { error: 'Todavía no está publicado.', code: 'sin-publicar' });
 }
 /** Publica el script como aplicación web con la API de Apps Script (crea versión + implementación, o actualiza la existente). */
@@ -581,7 +582,7 @@ function mostrarResultado_(dep) {
       '<p style="font-size:12px;color:#555">Tu link personal (también te llegó por mail, para abrirlo en el celular):<br><input style="width:100%;font-size:12px" readonly value="' + link + '" onclick="this.select()"></p></div>';
   } else {
     var err = String((dep && dep.error) || ''), userOff = /has not enabled the Apps Script API/i.test(err);
-    var manual = '<p><b>Publicalo a mano (4 clics, una sola vez):</b></p><ol style="padding-left:18px"><li>Arriba: <b>Extensiones → Apps Script</b>.</li><li>Botón azul <b>Implementar → Nueva implementación</b>. En el engranaje ⚙️ elegí <b>Aplicación web</b>.</li><li><i>Ejecutar como:</i> <b>Yo</b> · <i>Quién tiene acceso:</i> <b>Cualquier usuario</b> → <b>Implementar</b> (aceptá los permisos).</li><li>Volvé a esta planilla: <b>💹 Finanzas → Ver mi link personal</b>.</li></ol>';
+    var manual = '<p><b>Publicalo a mano (4 clics, una sola vez):</b></p><ol style="padding-left:18px"><li>Arriba: <b>Extensiones → Apps Script</b>.</li><li>Botón azul <b>Implementar → Nueva implementación</b>. En el engranaje ⚙️ elegí <b>Aplicación web</b>.</li><li><i>Ejecutar como:</i> <b>Yo</b> · <i>Quién tiene acceso:</i> <b>Cualquier usuario</b> (no «…con una cuenta de Google») → <b>Implementar</b> y aceptá los permisos.</li><li>Copiá la <b>URL de la aplicación web</b> que aparece (termina en /exec). Volvé a esta planilla: <b>💹 Finanzas → Cargar la URL publicada a mano</b> y pegala.</li></ol>';
     html = '<div style="font:14px/1.45 system-ui,Arial;padding:2px 6px">' + (userOff
       ? '<h2 style="margin:0 0 8px">Falta un permiso (una sola vez)</h2><ol><li>Abrí <a href="https://script.google.com/home/usersettings" target="_blank"><b>este enlace</b></a> y activá <b>«API de Google Apps Script»</b>.</li><li>Esperá 2 o 3 minutos y volvé a tocar <b>💹 Finanzas → Instalar</b>.</li></ol><p style="font-size:13px">¿Ya estaba activado y sigue saliendo esto? Usá el plan B:</p>' + manual
       : '<h2 style="margin:0 0 8px">Ya casi: falta publicar tu conexión</h2><p style="font-size:13px">Tus carpetas y tu base de datos ya están creadas en tu Drive.</p>' + manual) +
