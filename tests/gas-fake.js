@@ -38,7 +38,7 @@ function createEnv(opts = {}) {
       }
     };
   }
-  function Blob(buf, mime, name) { return { _buf: buf, getBytes: () => toSigned(buf), getContentType: () => mime, getName: () => name }; }
+  function Blob(buf, mime, name) { return { _buf: buf, getBytes: () => toSigned(buf), getContentType: () => mime, getName: () => name, getDataAsString: () => buf.toString('utf8') }; }
 
   function Range(sh, r, c, nr = 1, nc = 1) {
     const self = {
@@ -85,7 +85,7 @@ function createEnv(opts = {}) {
     PropertiesService: { getScriptProperties: () => ({ getProperty: k => (k in props ? props[k] : null), setProperty: (k, v) => { props[k] = String(v); }, deleteProperty: k => { delete props[k]; } }) },
     MailApp: { sendEmail: o => mails.push(o) },
     HtmlService: { createHtmlOutput: h => { const o = { html: h, setWidth: () => o, setHeight: () => o }; return o; } },
-    CacheService: { getScriptCache: () => ({ get: k => cache[k] || null, put: (k, v) => { cache[k] = v; } }) },
+    CacheService: { getScriptCache: () => ({ get: k => cache[k] || null, put: (k, v) => { cache[k] = v; }, getAll: ks => ks.reduce((a, k) => { if (k in cache) a[k] = cache[k]; return a; }, {}), removeAll: ks => ks.forEach(k => delete cache[k]) }) },
     LockService: { getScriptLock: () => ({ waitLock: () => { }, tryLock: () => true, releaseLock: () => { } }) },
     Session: { getScriptTimeZone: () => 'America/Argentina/Buenos_Aires', getEffectiveUser: () => ({ getEmail: () => 'dueno@gmail.com' }) },
     ContentService: { MimeType: { JSON: 'json' }, createTextOutput: s => ({ setMimeType: () => ({ getContent: () => s }) }) },
@@ -100,8 +100,9 @@ function createEnv(opts = {}) {
       DigestAlgorithm: { SHA_256: 'sha256' },
       computeDigest: (alg, x) => toSigned(crypto.createHash(alg).update(typeof x === 'string' ? Buffer.from(x, 'utf8') : toBuf(x)).digest()),
       base64Decode: s => toSigned(Buffer.from(s, 'base64')),
+      base64DecodeWebSafe: s => toSigned(Buffer.from(s.replace(/-/g, '+').replace(/_/g, '/'), 'base64')),
       base64Encode: b => toBuf(b).toString('base64'),
-      newBlob: (bytes, mime, name) => Blob(toBuf(bytes), mime, name),
+      newBlob: (bytes, mime, name) => Blob(Array.isArray(bytes) ? toBuf(bytes) : Buffer.from(String(bytes), 'utf8'), mime, name),
       formatDate: (d, tz, fmt) => { const p = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Argentina/Buenos_Aires', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(d).reduce((a, x) => (a[x.type] = x.value, a), {}); return fmt.replace('yyyy', p.year).replace('MM', p.month).replace('dd', p.day).replace('HH', p.hour).replace('mm', p.minute); }
     },
     DriveApp: {

@@ -226,6 +226,14 @@ let pass = 0; const ok = n => { pass++; console.log('  ✓', n); };
   await ctx.setOffline(false); await p.evaluate(() => flush()); await waitSynced(p);
   assert(dbMovs().some(m => /alfajor/i.test(m.descripcion)));
   ok('sin internet: guarda en el dispositivo y sube al volver la conexión');
+  // backend que rechaza POST (script dentro de una planilla): la app pasa sola a GET, también para archivos
+  srv.failPost = true;
+  await tab(p, 'asistente'); await chat(p, 'gasté 2300 en una birome'); await waitSynced(p);
+  assert(dbMovs().some(m => /birome/i.test(m.descripcion)), 'sincroniza por GET');
+  await tab(p, 'importar'); await importFx(p, 'mastercard.pdf'); await confirmImp(p);
+  assert(env.readTable_('Importaciones').some(i => i.archivo === 'mastercard.pdf' && i.archivoId), 'sube el archivo en partes por GET');
+  assert(srv.gets > 3); srv.failPost = false;
+  ok('si el backend rechaza POST, la app usa GET automáticamente (incluido subir archivos en partes)');
 
   assert.deepStrictEqual(errors, [], 'errores en consola: ' + errors.join(' | '));
   ok('sin errores de JavaScript');

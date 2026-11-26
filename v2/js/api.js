@@ -84,14 +84,38 @@ function getToken() {
 function logout() { try { google.accounts.id.disableAutoSelect(); } catch (e) { } localStorage.removeItem(LS_TOK); SYNC.user = null; SYNC.status = isConfigured() ? 'login' : 'local'; UI.refresh(); }
 
 /* ---------- Llamadas al backend ---------- */
+/* Transporte: POST por defecto. Si el backend no acepta POST (pasa con scripts dentro de una planilla),
+   se usa GET: el pedido viaja en la URL (?q=) o en partes de 6.000 caracteres (?c=&i=&n=&d=). */
+var CHUNK = 6000;
+function transportKey() { return 'nirai_transport_' + conn().url; }
+function usingGet() { return lsGet(transportKey()) === 'get'; }
+function encodeQ(obj) { return btoa(unescape(encodeURIComponent(JSON.stringify(obj)))).replace(/\+/g, '-').replace(/\//g, '_'); }
+function readJson(r) { if (!r.ok) throw new Error('Tu backend respondió ' + r.status); return r.json(); }
+function sendGet(url, body) {
+  var q = encodeQ(body), sep = url.indexOf('?') >= 0 ? '&' : '?';
+  if (q.length <= CHUNK) return fetch(url + sep + 'q=' + encodeURIComponent(q)).then(readJson);
+  var id = (uid() + uid()).replace(/[^a-z0-9]/gi, ''), n = Math.ceil(q.length / CHUNK), i = 0;
+  function next() {
+    var part = q.slice(i * CHUNK, (i + 1) * CHUNK);
+    return fetch(url + sep + 'c=' + id + '&i=' + i + '&n=' + n + '&d=' + encodeURIComponent(part)).then(readJson).then(function (j) {
+      i++; if (i < n) { if (!j.ok) throw new Error(j.error || 'Error enviando datos'); return next(); }
+      return j;
+    });
+  }
+  return next();
+}
+function sendPost(url, body) { return fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body), redirect: 'follow' }).then(readJson); }
+function isNetErr(e) { return /Failed to fetch|NetworkError|Load failed|network/i.test(e && e.message || ''); }
 function api(action, payload) {
   var c = conn(); if (!c.url) return Promise.reject(new Error('Falta configurar la conexión con Google Drive (Ajustes).'));
   return getToken().then(function (tok) {
-    return fetch(c.url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action: action, payload: payload || {}, idToken: tok, device: deviceId() }), redirect: 'follow' });
-  }).then(function (r) {
-    if (!r.ok) throw new Error('Tu backend respondió ' + r.status);
-    return r.json();
-  }, function (e) { throw netError(e); }).then(function (j) {
+    var body = { action: action, payload: payload || {}, idToken: tok, device: deviceId() };
+    if (usingGet()) return sendGet(c.url, body);
+    return sendPost(c.url, body).catch(function (e) {
+      if (!isNetErr(e) || !navigator.onLine) throw e;
+      return sendGet(c.url, body).then(function (j) { lsSet(transportKey(), 'get'); return j; });   // el backend acepta GET: queda recordado
+    });
+  }).catch(function (e) { throw netError(e); }).then(function (j) {
     if (!j.ok) { if (j.auth) { localStorage.removeItem(LS_TOK); SYNC.status = 'login'; } throw new Error(j.error || 'Error del servidor'); }
     return j.data;
   });
@@ -105,7 +129,7 @@ function isOnline() { return isConfigured() && (SYNC.status === 'ok' || SYNC.sta
 function flush() {
   if (_flushing || !SYNC.queue.length || !isConfigured() || !tokenValid()) { if (SYNC.queue.length && isConfigured() && !tokenValid()) SYNC.status = 'login'; UI.refreshStatus(); return Promise.resolve(); }
   _flushing = true; SYNC.status = 'saving'; UI.refreshStatus();
-  var batch = SYNC.queue.slice(0, 400), groups = {};
+  var batch = SYNC.queue.slice(0, usingGet() ? 40 : 400), groups = {};
   batch.forEach(function (q) { (groups[q.t] = groups[q.t] || []).push(q.row); });
   var ops = Object.keys(groups).map(function (t) { return { t: t, rows: groups[t] }; });
   return api('sync', { ops: ops }).then(function () {

@@ -111,4 +111,16 @@ t('copia de seguridad diaria crea una copia de la base', () => {
   const copias = Object.values(env.__.files).filter(f => env.__.folders[f.parent] && env.__.folders[f.parent].name === 'Copias de seguridad');
   assert.strictEqual(copias.length, 1); assert(env.__.sheetsById[copias[0].id].sheets.find(s => s.name === 'Movimientos'));
 });
+t('vía GET: pedido completo en la URL y en partes (para backends que rechazan POST)', () => {
+  const enc = o => Buffer.from(JSON.stringify(o), 'utf8').toString('base64').replace(/\+/g, '-').replace(/\//g, '_');
+  const g = params => JSON.parse(env.doGet({ parameter: params }).getContent());
+  assert.strictEqual(g({}).version, 5);
+  const r = g({ q: enc({ action: 'ping', idToken: 'token-valido' }) }); assert(r.ok && r.data.ok);
+  assert(!g({ q: enc({ action: 'ping', idToken: 'basura' }) }).ok, 'sigue exigiendo el token');
+  const big = enc({ action: 'uploadFile', idToken: 'token-valido', payload: { name: 'grande.pdf', mime: 'application/pdf', base64: Buffer.alloc(30000, 7).toString('base64'), kind: 'resumen' } });
+  const n = Math.ceil(big.length / 6000); let last;
+  for (let i = 0; i < n; i++) last = g({ c: 'abc123', i: String(i), n: String(n), d: big.slice(i * 6000, (i + 1) * 6000) });
+  assert(last.ok && last.data.fileId, JSON.stringify(last)); assert.strictEqual(env.__.files[last.data.fileId].bytes.length, 30000);
+  assert(!g({ c: 'zz9', i: '1', n: '2', d: 'x' }).ok, 'falta la parte 0');
+});
 console.log(`\n${pass} pruebas de backend OK`);

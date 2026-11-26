@@ -24,7 +24,7 @@
  */
 
 var APP_NAME = 'FINANZAS NIRAI TECH IA';
-var BACKEND_VERSION = 4;
+var BACKEND_VERSION = 5;
 var APP_URL = 'https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/v2/';
 // ID de cliente OAuth de la app publicada (es público: identifica a la app, no da acceso a nada)
 var DEFAULT_CLIENT_ID = '288188064237-aatf9mti4ioim04pup4m4ok9abdp16ub.apps.googleusercontent.com';
@@ -240,11 +240,36 @@ function verifyToken_(idToken) {
 }
 
 /* =========================== Web app =========================== */
-function doGet() { return json_({ ok: true, app: APP_NAME, version: 2 }); }
-
+/** GET: chequeo de salud, o pedidos completos por URL (?q=) o en partes (?c=&i=&n=&d=).
+ *  Algunas cuentas rechazan los POST a scripts dentro de una planilla; la app usa entonces esta vía. */
+function doGet(e) {
+  var p = (e && e.parameter) || {};
+  if (p.q) return handle_(decodeQ_(p.q));
+  if (p.c) {
+    var cache = CacheService.getScriptCache(), id = String(p.c).replace(/[^A-Za-z0-9]/g, '').slice(0, 40), i = Number(p.i), n = Number(p.n);
+    if (!id || !(n > 0) || n > 500 || !(i >= 0) || i >= n) return json_({ ok: false, error: 'Parte inválida' });
+    cache.put('ck_' + id + '_' + i, String(p.d || ''), 1800);
+    if (i < n - 1) return json_({ ok: true, partial: true });
+    var keys = [], parts = [];
+    for (var k = 0; k < n; k++) keys.push('ck_' + id + '_' + k);
+    var got = cache.getAll(keys);
+    for (k = 0; k < n; k++) { if (got[keys[k]] == null) return json_({ ok: false, error: 'Se perdió una parte del envío. Reintentá.' }); parts.push(got[keys[k]]); }
+    cache.removeAll(keys);
+    return handle_(decodeQ_(parts.join('')));
+  }
+  return json_({ ok: true, app: APP_NAME, version: BACKEND_VERSION });
+}
+function decodeQ_(q) {
+  try { return JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(String(q))).getDataAsString('UTF-8')); }
+  catch (e) { return { __invalid: true }; }
+}
 function doPost(e) {
   var req;
   try { req = JSON.parse((e && e.postData && e.postData.contents) || '{}'); } catch (err) { return json_({ ok: false, error: 'JSON inválido' }); }
+  return handle_(req);
+}
+function handle_(req) {
+  if (!req || req.__invalid) return json_({ ok: false, error: 'Pedido inválido' });
   try {
     verifyToken_(req.idToken);
     var fn = ACTIONS[req.action];
