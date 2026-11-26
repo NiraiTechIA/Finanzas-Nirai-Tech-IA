@@ -1,5 +1,7 @@
 # Vender FINANZAS NIRAI TECH IA — guía para el dueño
 
+**Soporte oficial de Nirai Tech IA:** WhatsApp **11 7237-3270** (https://wa.me/5491172373270). Figura en la guía de instalación, en el cartel del instalador, en la hoja de bienvenida y en el pie de la app.
+
 ## Cómo funciona para el cliente
 - Cada cliente tiene **su copia** del backend en **su** cuenta de Google. Sus datos quedan en **su** Drive y vos no los ves.
 - Todos usan la misma app: `https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/v2/`. Cuando la mejorás, se actualiza para todos.
