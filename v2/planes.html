@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FINANZAS NIRAI TECH IA — Tu asistente financiero personal</title>
+<meta name="description" content="Subí tus resúmenes de tarjeta y Mercado Pago, contale tus gastos por mensaje y mirá en qué se va tu plata. Tus datos quedan en tu Google Drive.">
+<link rel="icon" href="icon.svg"><link rel="stylesheet" href="css/app.css"><link rel="stylesheet" href="css/doc.css">
+<style>
+.hero{text-align:center;padding:26px 6px 10px}.hero h1{font-size:30px;line-height:1.2;margin:10px 0}.hero p{font-size:17px;color:var(--mut);max-width:640px;margin:0 auto 18px}
+.ctas{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}.wa{background:#25d366!important;border-color:#25d366!important;color:#fff!important}
+.feat{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:18px 0}.feat .box{margin:0}.feat .ic{font-size:26px}.feat h3{margin:6px 0 4px}
+.chat-demo{max-width:520px;margin:14px auto;display:flex;flex-direction:column;gap:8px}.cb{padding:9px 13px;border-radius:14px;max-width:85%;font-size:14px}.cb.me{align-self:flex-end;background:var(--acc);color:var(--acc-ink)}.cb.bot{background:var(--soft)}
+.plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin:16px 0}.plan{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:8px}
+.plan.star{border:2px solid var(--acc);box-shadow:0 6px 24px rgba(31,79,216,.12)}.plan .price{font-size:28px;font-weight:700}.plan .price small{font-size:14px;color:var(--mut);font-weight:400}.plan ul{padding-left:18px;margin:4px 0;flex:1}.plan li{margin:4px 0}
+.badge2{display:inline-block;background:var(--acc);color:var(--acc-ink);border-radius:999px;font-size:11px;padding:2px 9px;font-weight:700;align-self:flex-start}
+details.faq{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin:8px 0}details.faq summary{font-weight:600;cursor:pointer}
+</style>
+</head><body><main class="doc" style="max-width:980px">
+<header class="top"><span style="font-size:22px">💹</span><b>FINANZAS <span style="color:var(--acc)">NIRAI TECH IA</span></b></header>
+
+<section class="hero">
+<h1>Sabé en qué se va tu plata,<br>sin cargar nada a mano.</h1>
+<p>Subí el resumen de tu tarjeta o de Mercado Pago y en segundos ves tus gastos ordenados por categoría. Escribile al asistente como a un amigo: <i>«gasté $18.500 en una cena»</i>. Todo queda guardado en <b>tu</b> Google Drive.</p>
+<div class="ctas"><a class="btn pri" id="ctaProbar" href="./">Probar gratis</a><a class="btn wa" id="ctaWa" href="https://wa.me/5491172373270" target="_blank" rel="noopener">💬 Quiero contratarlo</a></div>
+</section>
+
+<div class="chat-demo" aria-label="Ejemplo de conversación con el asistente">
+<div class="cb me">Hoy gasté $35.000 en combustible</div>
+<div class="cb bot">✅ Registré 🚗 Combustible — <b>$ 35.000</b> · Gasto · hoy</div>
+<div class="cb me">¿Cuánto gasté este mes en comida?</div>
+<div class="cb bot">🍔 En Comida y restaurantes llevás <b>$ 142.300</b> (18% del total). El mes pasado fueron $ 121.000.</div>
+</div>
+
+<h2>Todo lo que hace por vos</h2>
+<div class="feat">
+<div class="box"><div class="ic">📄</div><h3>Lee tus resúmenes</h3><p>Visa, American Express y Mercado Pago en PDF, Excel o CSV. Controla que el total cuadre con el resumen.</p></div>
+<div class="box"><div class="ic">💬</div><h3>Asistente por mensajes</h3><p>Registrá gastos e ingresos escribiendo normal, corregí errores y preguntale lo que quieras sobre tus números.</p></div>
+<div class="box"><div class="ic">📌</div><h3>Gastos fijos bajo control</h3><p>Seguro, obra social, servicios, suscripciones: te muestra cuáles ya pagaste y cuáles faltan este mes.</p></div>
+<div class="box"><div class="ic">♻️</div><h3>Sin duplicados</h3><p>Detecta movimientos repetidos, transferencias entre tus cuentas y pagos de tarjeta para no contar dos veces.</p></div>
+<div class="box"><div class="ic">📊</div><h3>Reportes y alertas</h3><p>Mensual, trimestral, semestral y anual. Avisos de gastos inusuales y proyección del mes que viene.</p></div>
+<div class="box"><div class="ic">🔒</div><h3>Tus datos, en tu Drive</h3><p>Nada queda en servidores ajenos. Copia de seguridad diaria y acceso desde el celular y la PC.</p></div>
+</div>
+
+<h2>Planes</h2>
+<div class="plans">
+<div class="plan"><b>Prueba gratis</b><div class="price">$ 0</div>
+<ul><li>Todas las pantallas y el asistente</li><li>Importá tus resúmenes</li><li>Datos guardados en ese navegador</li></ul>
+<a class="btn" id="planProbar" href="./">Probar ahora</a></div>
+<div class="plan star"><span class="badge2">RECOMENDADO</span><b>Instalación + abono mensual</b><div class="price" id="pMensual">$ —<small> / mes</small></div><div class="small mut" id="pInst">+ instalación única</div>
+<ul><li>Conectado a <b>tu</b> Google Drive</li><li>Celular y PC sincronizados</li><li>Copias de seguridad automáticas</li><li>Lectura con IA de fotos y PDF de cualquier banco</li><li>Instalación asistida por videollamada</li><li>Soporte por WhatsApp y actualizaciones</li></ul>
+<a class="btn wa" data-plan="mensual" href="#" target="_blank" rel="noopener">💬 Contratar mensual</a></div>
+<div class="plan"><b>Instalación + abono anual</b><div class="price" id="pAnual">$ —<small> / año</small></div><div class="small mut">Instalación incluida · 2 meses de regalo</div>
+<ul><li>Todo lo del plan mensual</li><li>Un solo pago al año</li></ul>
+<a class="btn wa" data-plan="anual" href="#" target="_blank" rel="noopener">💬 Contratar anual</a></div>
+</div>
+<p class="legal-note">Precios en pesos argentinos. Podés darte de baja cuando quieras. Si contratás a distancia, tenés 10 días para arrepentirte: <a href="arrepentimiento.html"><b>Botón de arrepentimiento</b></a>. Al dar de baja, tus datos siguen en tu Google Drive.</p>
+
+<h2>Preguntas frecuentes</h2>
+<details class="faq"><summary>¿Ustedes ven mis datos?</summary><p>No. Todo se guarda en una carpeta de tu Google Drive, con tu cuenta. Nirai Tech IA no tiene una copia de tu información.</p></details>
+<details class="faq"><summary>¿Necesito saber de computación?</summary><p>No. La instalación la hacemos juntos por videollamada y lleva unos 20 minutos. Después, todo se maneja desde la app.</p></details>
+<details class="faq"><summary>¿Qué bancos y tarjetas lee?</summary><p>Visa, American Express (Santander) y Mercado Pago tienen lectura exacta. Otros bancos, fotos de tickets y capturas se leen con inteligencia artificial.</p></details>
+<details class="faq"><summary>¿Se conecta a mi banco o mueve plata?</summary><p>No. Nunca opera tus cuentas ni pide claves bancarias: solo lee los resúmenes que vos subís y lo que le escribís.</p></details>
+<details class="faq"><summary>¿Qué pasa con lo que cargué en la prueba gratis?</summary><p>Cuando contratás y conectás tu Drive en ese mismo navegador, tus datos de prueba se pasan solos.</p></details>
+<details class="faq"><summary>¿Cómo pago?</summary><p>Con link de pago de Mercado Pago. Escribinos por WhatsApp y te lo mandamos.</p></details>
+
+<div class="box" style="text-align:center;border-left:4px solid #25d366">
+<h3 style="margin-top:2px">¿Lo querés para vos?</h3><p>Escribinos al número oficial de <b>Nirai Tech IA</b>: <b>11 7237-3270</b></p>
+<a class="btn wa" id="ctaWa2" href="https://wa.me/5491172373270" target="_blank" rel="noopener">💬 Hablar por WhatsApp</a></div>
+<p class="legal-note"><a href="terminos.html">Términos y condiciones</a> · <a href="privacidad.html">Privacidad</a> · <a href="arrepentimiento.html"><b>Botón de arrepentimiento</b></a></p>
+</main>
+<script src="js/config.js"></script>
+<script>
+(function () {
+  var C = window.NIRAI_CONFIG || {}, P = C.PRICES || {}, nf = new Intl.NumberFormat('es-AR');
+  var num = C.SUPPORT_WHATSAPP || '5491172373270', wa = function (t) { return 'https://wa.me/' + num + '?text=' + encodeURIComponent(t); };
+  var $ = function (id) { return document.getElementById(id); };
+  if (P.mensual) $('pMensual').innerHTML = '$ ' + nf.format(P.mensual) + '<small> / mes</small>';
+  if (P.instalacion) $('pInst').textContent = '+ instalación única de $ ' + nf.format(P.instalacion);
+  if (P.anual) $('pAnual').innerHTML = '$ ' + nf.format(P.anual) + '<small> / año</small>';
+  var trial = C.TRIAL_URL || './'; $('ctaProbar').href = trial; $('planProbar').href = trial;
+  var gen = 'Hola Nirai Tech IA, quiero contratar FINANZAS NIRAI TECH IA.';
+  $('ctaWa').href = wa(gen); $('ctaWa2').href = wa(gen);
+  document.querySelectorAll('[data-plan]').forEach(function (a) { a.href = wa('Hola Nirai Tech IA, quiero contratar FINANZAS NIRAI TECH IA con el plan ' + a.getAttribute('data-plan') + '.'); });
+})();
+</script>
+</body></html>

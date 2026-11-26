@@ -10,20 +10,20 @@
 <div class="box">
 <form id="f">
 <p><label>Nombre y apellido<br><input type="text" name="nombre" required style="width:100%"></label></p>
-<p><label>Email con el que contrataste<br><input type="text" name="email" required style="width:100%"></label></p>
+<p><label>Email de Google con el que usás la app<br><input type="text" name="email" required style="width:100%"></label></p>
 <p><label>Fecha de contratación (aproximada)<br><input type="date" name="fecha"></label></p>
 <p><label><input type="radio" name="tipo" value="Arrepentimiento" checked> Me arrepiento de la contratación (dentro de los 10 días)</label><br>
 <label><input type="radio" name="tipo" value="Baja"> Quiero dar de baja el servicio</label></p>
-<p><button class="btn pri">Enviar solicitud</button></p>
-<p class="legal-note">Se abre tu correo con la solicitud lista para enviar a <a href="mailto:mauromaejo@gmail.com">mauromaejo@gmail.com</a>. También podés pedirlo por WhatsApp al <a href="https://wa.me/5491172373270" target="_blank" rel="noopener">11 7237-3270</a>. Dentro de las 24 horas te respondemos con el <b>código de identificación</b> de tu solicitud. Tus datos siguen siempre en tu Google Drive.</p>
+<p><button class="btn pri" style="background:#25d366;border-color:#25d366;color:#fff">💬 Enviar solicitud por WhatsApp</button></p>
+<p class="legal-note">Se abre WhatsApp con la solicitud ya escrita para el número oficial de Nirai Tech IA (<a href="https://wa.me/5491172373270" target="_blank" rel="noopener">11 7237-3270</a>): solo tenés que tocar Enviar. Dentro de las 24 horas te respondemos con el <b>código de identificación</b> de tu solicitud. Tus datos siguen siempre en tu Google Drive.</p>
 </form></div>
 <p><a href="./">← Volver a la app</a> · <a href="terminos.html">Términos y condiciones</a> · <a href="privacidad.html">Privacidad</a></p>
 </main>
 <script>
 document.getElementById('f').addEventListener('submit', function (e) {
   e.preventDefault(); var d = new FormData(e.target), tipo = d.get('tipo');
-  var body = 'Solicitud: ' + tipo + '\nNombre: ' + d.get('nombre') + '\nEmail de contratación: ' + d.get('email') + '\nFecha de contratación: ' + (d.get('fecha') || '-') + '\nFecha de la solicitud: ' + new Date().toLocaleString('es-AR');
-  location.href = 'mailto:mauromaejo@gmail.com?subject=' + encodeURIComponent(tipo + ' — FINANZAS NIRAI TECH IA') + '&body=' + encodeURIComponent(body);
+  var body = 'Solicitud: ' + tipo + '\nNombre: ' + d.get('nombre') + '\nEmail: ' + d.get('email') + '\nFecha de contratación: ' + (d.get('fecha') || '-') + '\nFecha de la solicitud: ' + new Date().toLocaleString('es-AR');
+  window.open('https://wa.me/5491172373270?text=' + encodeURIComponent('Hola Nirai Tech IA. Solicito ' + (tipo === 'Baja' ? 'la BAJA del servicio' : 'el ARREPENTIMIENTO de mi compra (botón de arrepentimiento)') + ' de FINANZAS NIRAI TECH IA.\n' + body), '_blank');
 });
 </script>
 </body></html>
