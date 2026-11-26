@@ -21,7 +21,7 @@ function catOptions(val, tipo) {
 }
 function pct(a, b) { if (!b) return ''; var d = (a - b) / Math.abs(b) * 100; return (d >= 0 ? '+' : '') + Math.round(d) + '%'; }
 function statusPill() {
-  var s = SYNC.status, m = { local: ['📴', 'Modo local', 'warn'], ok: ['☁️', 'Sincronizado', 'ok'], saving: ['⏳', 'Guardando…', 'ok'], offline: ['⚠️', 'Sin conexión' + (SYNC.queue.length ? ' · ' + SYNC.queue.length + ' pendientes' : ''), 'warn'], login: ['🔑', 'Iniciar sesión', 'bad'], error: ['⚠️', 'Error', 'bad'] }[s] || ['', s, ''];
+  var s = SYNC.status, m = { local: ['📴', 'Modo local', 'warn'], ok: ['☁️', 'Sincronizado', 'ok'], connecting: ['⏳', 'Conectando…', 'ok'], saving: ['⏳', 'Guardando…', 'ok'], offline: ['⚠️', 'Sin conexión' + (SYNC.queue.length ? ' · ' + SYNC.queue.length + ' pendientes' : ''), 'warn'], login: ['🔑', 'Iniciar sesión', 'bad'], error: ['⚠️', 'Error', 'bad'] }[s] || ['', s, ''];
   return '<button id="syncPill" class="pill ' + m[2] + '" data-act="tab" data-k="ajustes" title="' + esc(SYNC.error || (SYNC.lastSync ? 'Última sincronización: ' + SYNC.lastSync.toLocaleTimeString('es-AR') : '')) + '">' + m[0] + ' ' + m[1] + '</button>';
 }
 
@@ -475,6 +475,7 @@ function viewAjustes() {
   if (isConfigured()) {
     h += '<div class="row mt">' + (tokenValid() ? '<span class="pill ok">✓ Sesión iniciada' + (t && t.email && t.email !== 'test' ? ': ' + esc(t.email) : '') + '</span><button class="btn ghost small" data-act="logout">Cerrar sesión</button>' : '<div id="gbtn"></div>') + statusPill() + '</div>';
     if (SYNC.error) h += '<p class="small neg">' + esc(SYNC.error) + '</p>';
+    if (!SYNC.links.carpeta) h += '<div class="row mt"><button class="btn small" data-act="syncNow">🔄 Sincronizar ahora</button></div>';
     if (SYNC.links.carpeta) h += '<div class="row mt"><a class="btn small" target="_blank" rel="noopener" href="' + esc(SYNC.links.carpeta) + '">📁 Carpeta en Drive</a><a class="btn small" target="_blank" rel="noopener" href="' + esc(SYNC.links.baseDeDatos) + '">🗄️ Base de datos</a><a class="btn small" target="_blank" rel="noopener" href="' + esc(SYNC.links.totales) + '">📊 Totales</a><button class="btn small" data-act="syncNow">🔄 Sincronizar ahora</button><button class="btn small" data-act="backupNow">💾 Copia de seguridad ahora</button></div>' +
       '<p class="small mut">Para compartir tus números con otra persona (por ejemplo, tu contador o asistente): compartile solo la planilla <b>Totales</b> (botón Compartir de Google → «Lector»). Tiene los totales por mes, trimestre, semestre, año y categoría, se actualiza sola y no incluye el detalle de cada movimiento.</p>';
     if (SYNC.backend && SYNC.backend.link) h += '<div class="field mt"><label>Tu link personal (abrilo en tu celular para conectarlo)</label><div class="row"><input type="text" readonly value="' + esc(SYNC.backend.link) + '" style="flex:1" onclick="this.select()"><button class="btn small" data-act="copyLink">Copiar</button></div><span class="small mut">No lo publiques: es la dirección de tu base. Igual, solo tu cuenta de Google puede entrar.</span></div>';
