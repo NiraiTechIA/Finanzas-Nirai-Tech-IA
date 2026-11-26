@@ -9,7 +9,7 @@ const toBuf = bytes => Buffer.from(bytes.map(b => b & 0xff));
 function createEnv(opts = {}) {
   let n = 0; const nid = p => p + (++n).toString(36) + crypto.randomBytes(3).toString('hex');
   const files = {}, folders = {}, sheetsById = {};
-  const props = {}, cache = {}, triggers = [], logs = [], mails = [], active = {}, ui = { dialogs: [] };
+  const props = {}, cache = {}, triggers = [], logs = [], mails = [], active = {}, ui = { dialogs: [] }, service = {};
   const myDrive = { id: 'root', name: 'Mi unidad', parent: null };
   folders.root = myDrive;
 
@@ -90,7 +90,7 @@ function createEnv(opts = {}) {
     Session: { getScriptTimeZone: () => 'America/Argentina/Buenos_Aires', getEffectiveUser: () => ({ getEmail: () => 'dueno@gmail.com' }) },
     ContentService: { MimeType: { JSON: 'json' }, createTextOutput: s => ({ setMimeType: () => ({ getContent: () => s }) }) },
     ScriptApp: {
-      getScriptId: () => 'script-123', getOAuthToken: () => 'oauth-token-test',
+      getScriptId: () => 'script-123', getOAuthToken: () => 'oauth-token-test', getService: () => ({ getUrl: () => service.url || null }),
       getProjectTriggers: () => triggers.slice(), deleteTrigger: t => { triggers.splice(triggers.indexOf(t), 1); },
       newTrigger: fn => { const t = { fn }; const ch = { timeBased: () => ch, everyMinutes: m => { t.every = m; return ch; }, atHour: h => { t.hour = h; return ch; }, everyDays: () => ch, create: () => { triggers.push(t); return t; } }; return ch; }
     },
@@ -120,7 +120,7 @@ function createEnv(opts = {}) {
   vm.createContext(ctx);
   vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'apps-script', 'Code.gs'), 'utf8'), ctx, { filename: 'Code.gs' });
   Object.assign(props, { OWNER_EMAIL: 'dueno@gmail.com', OAUTH_CLIENT_ID: 'cliente-test.apps.googleusercontent.com' }, opts.props || {});
-  ctx.__ = { files, folders, sheetsById, props, triggers, logs, mails, ui, active, Folder, File };
+  ctx.__ = { files, folders, sheetsById, props, triggers, logs, mails, ui, active, service, Folder, File };
   // simula estar dentro de una copia de la planilla plantilla (script vinculado)
   ctx.bindToNewSheet = name => { const ss = ctx.SpreadsheetApp.create(name || 'Copia de FINANZAS NIRAI TECH IA — Instalador'); active.id = ss.getId(); return ss; };
   ctx.post = body => JSON.parse(ctx.doPost({ postData: { contents: JSON.stringify(body) } }).getContent());
