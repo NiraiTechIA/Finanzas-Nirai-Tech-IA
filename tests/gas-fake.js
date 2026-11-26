@@ -115,7 +115,7 @@ function createEnv(opts = {}) {
       create: name => { const id = nid('ss'); const ss = { id, name, sheets: [{ name: 'Hoja 1', cells: [] }] }; sheetsById[id] = ss; files[id] = { id, name, mime: 'application/vnd.google-apps.spreadsheet', parent: 'root', created: new Date() }; return Spreadsheet(ss); },
       openById: id => { if (!sheetsById[id]) throw new Error('no ss'); return Spreadsheet(sheetsById[id]); },
       getActiveSpreadsheet: () => (active.id && sheetsById[active.id] ? Spreadsheet(sheetsById[active.id]) : null),
-      getUi: () => { if (!active.id) throw new Error('sin interfaz'); return { ButtonSet: { OK_CANCEL: 1 }, Button: { OK: 'ok', CANCEL: 'cancel' }, prompt: () => ({ getSelectedButton: () => 'ok', getResponseText: () => ui.respuesta || '' }), createMenu: () => { const m = { addItem: () => m, addToUi: () => { ui.menu = true; } }; return m; }, showModalDialog: (o, t) => { ui.dialogs.push(o.html); } }; }
+      getUi: () => { if (!active.id) throw new Error('sin interfaz'); return { ButtonSet: { OK_CANCEL: 1 }, Button: { OK: 'ok', CANCEL: 'cancel' }, prompt: () => ({ getSelectedButton: () => 'ok', getResponseText: () => ui.respuesta || '' }), createMenu: () => { const m = { addItem: () => m, addSeparator: () => m, addToUi: () => { ui.menu = true; } }; return m; }, showModalDialog: (o, t) => { ui.dialogs.push(o.html); } }; }
     }
   };
   vm.createContext(ctx);
