@@ -13,16 +13,16 @@
 <p>El servicio «FINANZAS NIRAI TECH IA» (la «App») es provisto por <b>Mauro Antonio Maejo Puga</b>, bajo el nombre comercial <b>Nirai Tech IA</b>, con domicilio en Lomas de Zamora, Provincia de Buenos Aires, República Argentina. Contacto: <a href="mailto:mauromaejo@gmail.com">mauromaejo@gmail.com</a> · WhatsApp <a href="https://wa.me/5491172373270" target="_blank" rel="noopener">11 7237-3270</a>.</p>
 
 <h2>2. Cómo funciona la App</h2>
-<p>La App se compone de dos partes:</p>
+<p>La App es una <b>interfaz web</b> publicada en GitHub Pages que se ejecuta en tu navegador. En la versión completa se conecta con tu cuenta de Google de una de estas dos formas:</p>
 <ul>
-<li><b>La interfaz web</b>, publicada en GitHub Pages. Se ejecuta en tu navegador.</li>
-<li><b>Tu backend personal</b>: una copia del programa de la App, instalada en tu cuenta de Google mediante Google Apps Script, que corre con tu identidad y guarda la información en una carpeta de tu Google Drive llamada «FINANZAS NIRAI TECH IA».</li>
+<li><b>Conexión directa</b> (la habitual): cuando tocás «Conectar con Google», tu navegador se comunica directamente con Google Drive y Google Sheets usando el permiso <code>drive.file</code>. Ese permiso solo deja a la App ver y modificar <b>los archivos que ella misma crea</b> (la carpeta «FINANZAS NIRAI TECH IA» y su contenido). No tiene acceso al resto de tu Drive.</li>
+<li><b>Backend personal</b> (instalaciones anteriores): una copia del programa instalada en tu cuenta mediante Google Apps Script, que corre con tu identidad y guarda la información en la misma carpeta.</li>
 </ul>
-<p>Cada usuario tiene su propio backend y su propia carpeta. Nirai Tech IA no tiene un servidor central que reciba, almacene o procese tus datos financieros.</p>
+<p>En los dos casos, tus datos van de tu dispositivo a tu cuenta de Google. Nirai Tech IA no tiene un servidor central que reciba, almacene o procese tus datos financieros.</p>
 
 <h2>3. Qué datos se tratan, para qué y dónde quedan</h2>
 <h3>3.1 Datos de tu cuenta de Google</h3>
-<p>Cuando iniciás sesión con Google, la App recibe tu <b>dirección de email, tu nombre y tu foto de perfil</b>, junto con un token de identidad temporal. Se usan solamente para comprobar que sos el dueño del backend y permitirte el acceso. El token queda guardado en tu navegador hasta que vence (aproximadamente una hora) o hasta que cerrás sesión. No lo guardamos nosotros.</p>
+<p>Cuando iniciás sesión con Google, la App recibe tu <b>dirección de email, tu nombre y tu foto de perfil</b>, junto con un token de identidad temporal. Se usan solamente para identificar tu cuenta y mostrarla en Ajustes. Con la conexión directa, la App recibe además un <b>token de acceso temporal</b> limitado al permiso <code>drive.file</code>. Los tokens quedan guardados en tu navegador hasta que vencen (aproximadamente una hora) o hasta que cerrás sesión. No los guardamos nosotros.</p>
 <h3>3.2 Datos financieros</h3>
 <p>Incluyen los movimientos que cargás o importás: fechas, conceptos, importes, categorías, medios de pago, cuotas, ingresos, préstamos y notas. También los archivos que subís, como resúmenes de tarjeta, resúmenes de Mercado Pago, comprobantes y capturas. Se usan exclusivamente para mostrarte tus finanzas: registros, totales, gráficos, reportes, alertas y respuestas del asistente.</p>
 <p><b>Dónde quedan:</b></p>
@@ -36,10 +36,10 @@
 
 <h2>4. Uso de datos de Google (Google API Services)</h2>
 <p>El uso y la transferencia de información recibida de las APIs de Google por parte de la App se ajustan a la <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener">Política de datos de usuario de los servicios de API de Google</a>, incluidos los requisitos de Uso Limitado (<i>Limited Use</i>).</p>
-<p>Los permisos que solicita tu backend personal (acceso a Drive, Sheets, envío de un correo a tu propia casilla con tu link personal, tareas programadas y publicación del propio script) se usan solo para las funciones descriptas en esta política. Nunca se usan para publicidad ni para entrenar modelos de inteligencia artificial de Nirai Tech IA.</p>
+<p>La conexión directa solicita solo el permiso <code>drive.file</code> (archivos creados por la App), más tu email y perfil básico. Las instalaciones con backend personal solicitan además acceso a Drive y Sheets, envío de un correo a tu propia casilla, tareas programadas y publicación del propio script. Todos se usan solo para las funciones descriptas en esta política, y los datos obtenidos no se transfieren a terceros salvo a Google Gemini si vos activás la IA (sección 5). Nunca se usan para publicidad ni para entrenar modelos de inteligencia artificial de Nirai Tech IA.</p>
 
 <h2 id="ia">5. Inteligencia artificial (opcional)</h2>
-<p>Si activás la inteligencia artificial, tu backend envía a <b>Google Gemini</b> el contenido necesario para cada tarea: una foto o PDF a leer, un mensaje al asistente, o los totales necesarios para responder una pregunta. Lo envía usando <b>tu propia clave</b>, que queda guardada en tu backend y nunca en el navegador ni en servidores de Nirai Tech IA.</p>
+<p>Si activás la inteligencia artificial, la App envía a <b>Google Gemini</b> el contenido necesario para cada tarea: una foto o PDF a leer, un mensaje al asistente, o los totales necesarios para responder una pregunta. Lo envía usando <b>tu propia clave</b>. Con la conexión directa, la clave queda guardada en tu base de datos de Google Drive (hoja «Privado») y en tu navegador; con el backend personal, en tu backend. Nunca queda en servidores de Nirai Tech IA.</p>
 <ul>
 <li>Con una <b>clave gratuita</b>, según las condiciones de Google, el contenido enviado puede ser usado por Google para proveer, mejorar y desarrollar sus productos, y puede ser revisado por personas.</li>
 <li>Con una <b>clave asociada a una cuenta de facturación activa</b> (servicio pago de Google), Google no usa ese contenido para mejorar sus productos.</li>
@@ -57,7 +57,7 @@
 <p>Nirai Tech IA no accede a tu información. Si pedís ayuda y, para resolverla, hace falta ver algún dato, te lo vamos a pedir expresamente y solo vamos a ver lo que vos compartas, por el tiempo necesario.</p>
 
 <h2>8. Seguridad</h2>
-<p>El acceso a tu backend exige un token de Google válido emitido para la App y para el email del dueño, y cualquier otra cuenta es rechazada. Cada cambio queda registrado en la hoja «Log» de tu base, y se hace una copia de seguridad diaria en tu Drive. Sos responsable de proteger tu cuenta de Google: te recomendamos activar la verificación en dos pasos y no compartir tu link personal.</p>
+<p>Con la conexión directa, solo quien inicia sesión con tu cuenta de Google puede ver tus datos, y la App no accede a otros archivos de tu Drive. Con el backend personal, el acceso exige un token de Google válido emitido para la App y para el email del dueño, y cualquier otra cuenta es rechazada. Cada cambio queda registrado en la hoja «Log» de tu base, y se hace una copia de seguridad diaria en tu Drive. Sos responsable de proteger tu cuenta de Google: te recomendamos activar la verificación en dos pasos y no compartir tu link personal.</p>
 
 <h2>9. Tus derechos</h2>
 <p>Como titular de los datos podés ejercer en cualquier momento los derechos de acceso, rectificación, actualización y supresión (Ley 25.326). Como la información está en tu Google Drive, los ejercés directamente desde ahí, o escribiéndonos a <a href="mailto:mauromaejo@gmail.com">mauromaejo@gmail.com</a>.</p>
