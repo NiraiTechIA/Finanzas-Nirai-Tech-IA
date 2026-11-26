@@ -11,7 +11,7 @@ window.NIRAI_CONFIG = {
   BRAND: 'Nirai Tech IA',
   TRIAL_URL: 'https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/v2/',   // dónde se prueba gratis (cambiar a la raíz para usar la V1)
   PRICES: {                     // editá acá los precios (en pesos)
-    instalacion: 25000,         // instalación asistida por videollamada (pago único)
+    instalacion: 25000,         // instalación asistida o remota con RustDesk (pago único)
     mensual: 7000,              // abono mensual: soporte + actualizaciones
     anual: 70000                // abono anual (2 meses de regalo)
   }
