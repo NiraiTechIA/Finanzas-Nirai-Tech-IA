@@ -8,25 +8,34 @@ function lsGet(k, def) { try { var v = localStorage.getItem(k); return v == null
 function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
 function conn() {
   var c = lsGet(LS_CONN, {}) || {}, d = window.NIRAI_CONFIG || {};
-  return { url: (c.url || d.BACKEND_URL || '').trim(), clientId: (c.clientId || d.GOOGLE_CLIENT_ID || '').trim() };
+  return { url: c.mode === 'directo' ? '' : (c.url || d.BACKEND_URL || '').trim(), clientId: (c.clientId || d.GOOGLE_CLIENT_ID || '').trim(), mode: c.mode || '' };
 }
+/** Modo directo: la app usa Google Drive y Sheets desde el navegador (sin instalar nada). */
+function isDirect() { var c = conn(); return c.mode === 'directo' && !!c.clientId; }
 /** Link personal: …/v2/?conectar=<id de implementación o URL /exec>. Conecta este dispositivo con el Drive del dueño del link. */
 function applyConnectParam() {
   var q = new URLSearchParams(location.search), v = (q.get('conectar') || '').trim();
   if (q.has('desconectar')) { localStorage.removeItem(LS_CONN); localStorage.removeItem(LS_TOK); }
   if (!v) return null;
+  if (/^(google|directo)$/i.test(v)) {
+    q.delete('conectar'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
+    var pc = lsGet(LS_CONN, {}) || {};
+    if (pc.url) [LS_DATA, LS_QUEUE, LS_TOK].forEach(function (k) { localStorage.removeItem(k); });   // venía de otra instalación
+    lsSet(LS_CONN, { mode: 'directo' });
+    return pc.mode === 'directo' ? 'mismo' : 'nuevo';
+  }
   var url = /^https:\/\/script\.google\.com\//.test(v) ? v : /^[A-Za-z0-9_-]{20,}$/.test(v) ? 'https://script.google.com/macros/s/' + v + '/exec' : '';
   q.delete('conectar'); history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
   if (!url) return 'invalido';
-  var prev = (lsGet(LS_CONN, {}) || {}).url || '';
-  if (prev && prev !== url) {   // otra cuenta: los datos guardados en este dispositivo son de la otra base (ya están en su Drive)
+  var pcn = lsGet(LS_CONN, {}) || {}, prev = pcn.url || '';
+  if ((prev && prev !== url) || pcn.mode === 'directo') {   // otra cuenta: los datos guardados en este dispositivo son de la otra base (ya están en su Drive)
     [LS_DATA, LS_QUEUE, LS_TOK].forEach(function (k) { localStorage.removeItem(k); });
   }
   lsSet(LS_CONN, { url: url });
   return prev === url ? 'mismo' : 'nuevo';
 }
 function disconnectDevice() { [LS_CONN, LS_TOK, LS_DATA, LS_QUEUE].forEach(function (k) { localStorage.removeItem(k); }); location.href = location.pathname; }
-function isConfigured() { var c = conn(); return !!(c.url && c.clientId); }
+function isConfigured() { var c = conn(); return isDirect() || !!(c.url && c.clientId); }
 function deviceId() { var d = lsGet(LS_DEV); if (!d) { d = (/Mobi|Android|iPhone/i.test(navigator.userAgent) ? 'celular-' : 'pc-') + uid().slice(-5); lsSet(LS_DEV, d); } return d; }
 
 /* ---------- Guardado local ---------- */
@@ -57,9 +66,10 @@ function onCredential(resp) {
 }
 function initGis() {
   var c = conn(); if (!isConfigured() || window.NIRAI_TEST_TOKEN) return;   // en la prueba gratis no hace falta Google
-  if (window.google && google.accounts && google.accounts.id) return setupGis();
+  var setup = isDirect() ? setupDirect : setupGis;
+  if (window.google && google.accounts && (isDirect() ? google.accounts.oauth2 : google.accounts.id)) return setup();
   if (document.getElementById('gis-script')) return;
-  var s = document.createElement('script'); s.id = 'gis-script'; s.src = 'https://accounts.google.com/gsi/client'; s.async = true; s.defer = true; s.onload = setupGis;
+  var s = document.createElement('script'); s.id = 'gis-script'; s.src = 'https://accounts.google.com/gsi/client'; s.async = true; s.defer = true; s.onload = setup;
   s.onerror = function () { SYNC.status = 'offline'; SYNC.error = 'No se pudo cargar el inicio de sesión de Google (¿sin internet?).'; UI.refresh(); };
   document.head.appendChild(s);
 }
@@ -68,12 +78,42 @@ function setupGis() {
   _gisReady = true; UI.refresh();
   if (!tokenValid()) google.accounts.id.prompt();
 }
+/* Modo directo: permiso de Google Drive con un toque (token de acceso de 1 hora; se renueva con otro toque). */
+var _tokenClient = null;
+function setupDirect() {
+  _tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: conn().clientId, scope: GD.SCOPES, callback: onAccessToken,
+    error_callback: function (e) { SYNC.status = 'login'; SYNC.error = e && e.type === 'popup_closed' ? 'Se cerró la ventana de Google antes de terminar.' : 'No se pudo abrir la ventana de Google' + (e && e.type ? ' (' + e.type + ')' : '') + '. Si tu navegador bloquea ventanas emergentes, permitilas para este sitio.'; UI.refresh(); }
+  });
+  _gisReady = true; UI.refresh();
+}
+function requestDirectToken() {
+  if (!_tokenClient) { initGis(); if (typeof toast === 'function') toast('Cargando Google… tocá de nuevo en un segundo.'); return; }
+  var t = lsGet(LS_TOK) || {};
+  _tokenClient.requestAccessToken(t.email ? { prompt: '', login_hint: t.email } : { prompt: 'consent' });
+}
+function onAccessToken(resp) {
+  if (!resp || resp.error || !resp.access_token) { SYNC.status = 'login'; SYNC.error = 'Google no dio el permiso' + (resp && resp.error ? ' (' + resp.error + ')' : '') + '.'; UI.refresh(); return; }
+  if (google.accounts.oauth2.hasGrantedAllScopes && !google.accounts.oauth2.hasGrantedAllScopes(resp, 'https://www.googleapis.com/auth/drive.file')) {
+    SYNC.status = 'login'; SYNC.error = 'Falta el permiso para guardar en tu Google Drive. Tocá «Conectar con Google» de nuevo y tildá la casilla de Drive.'; UI.refresh(); return;
+  }
+  var exp = Math.floor(Date.now() / 1000) + Number(resp.expires_in || 3599);
+  fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { Authorization: 'Bearer ' + resp.access_token } }).then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; }).then(function (u) {
+    var prev = lsGet(LS_TOK) || {};
+    if (prev.email && u.email && prev.email !== u.email) { [LS_DATA, LS_QUEUE].forEach(function (k) { localStorage.removeItem(k); }); loadLocal(); }   // otra cuenta de Google
+    lsSet(LS_TOK, { t: resp.access_token, exp: exp, email: u.email || prev.email || '', name: u.name || '', direct: true });
+    SYNC.user = { email: u.email, name: u.name };
+    connectNow();
+  });
+}
 function renderGoogleButton(el) {
-  if (!el) return; if (!_gisReady) { el.innerHTML = '<span class="small mut">Cargando inicio de sesión de Google…</span>'; return; }
+  if (!el) return;
+  if (isDirect()) { el.innerHTML = '<button class="btn pri" data-act="gconnect">🔗 Conectar con Google</button>'; return; } if (!_gisReady) { el.innerHTML = '<span class="small mut">Cargando inicio de sesión de Google…</span>'; return; }
   el.innerHTML = ''; google.accounts.id.renderButton(el, { theme: 'outline', size: 'large', text: 'signin_with', shape: 'pill', locale: 'es' });
 }
 function getToken() {
   if (tokenValid()) return Promise.resolve(getTok().t);
+  if (isDirect()) return Promise.reject(new Error('AUTH: tocá «Conectar con Google» para sincronizar'));
   if (!_gisReady) return Promise.reject(new Error('AUTH: iniciá sesión con Google'));
   return new Promise(function (res, rej) {
     var w = { res: res }; _tokWaiters.push(w);
@@ -107,6 +147,10 @@ function sendGet(url, body) {
 function sendPost(url, body) { return fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body), redirect: 'follow' }).then(readJson); }
 function isNetErr(e) { return /Failed to fetch|NetworkError|Load failed|network/i.test(e && e.message || ''); }
 function api(action, payload) {
+  if (isDirect()) return getToken().then(function (tok) { return GD.call(action, payload, tok, (getTok() || {}).email || '', deviceId()); }).catch(function (e) {
+    if (/^AUTH/.test(e && e.message || '')) { if (!window.NIRAI_TEST_TOKEN) localStorage.removeItem(LS_TOK); SYNC.status = 'login'; }
+    throw netError(e);
+  });
   var c = conn(); if (!c.url) return Promise.reject(new Error('Falta configurar la conexión con Google Drive (Ajustes).'));
   return getToken().then(function (tok) {
     var body = { action: action, payload: payload || {}, idToken: tok, device: deviceId() };
@@ -120,7 +164,7 @@ function api(action, payload) {
     return j.data;
   });
 }
-function netError(e) { return /Failed to fetch|NetworkError|Load failed/i.test(e && e.message || '') ? new Error('No se pudo conectar con tu backend de Google. Revisá tu internet y que esté publicado como «Aplicación web» con acceso «Cualquier usuario».') : e; }
+function netError(e) { return /Failed to fetch|NetworkError|Load failed/i.test(e && e.message || '') ? new Error(isDirect() ? 'No se pudo conectar con Google. Revisá tu internet.' : 'No se pudo conectar con tu backend de Google. Revisá tu internet y que esté publicado como «Aplicación web» con acceso «Cualquier usuario».') : e; }
 function aiCall(p) { return api('ai', Object.assign({ categorias: catNames() }, p)); }
 function canUseAI() { return isConfigured() && SYNC.ai && SYNC.status !== 'login' && SYNC.status !== 'local'; }
 function isOnline() { return isConfigured() && (SYNC.status === 'ok' || SYNC.status === 'saving'); }

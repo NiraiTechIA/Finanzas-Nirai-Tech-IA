@@ -1,62 +1,50 @@
 # Vender FINANZAS NIRAI TECH IA — guía para el dueño
 
-**Soporte oficial de Nirai Tech IA:** WhatsApp **11 7237-3270** (https://wa.me/5491172373270). Figura en la guía de instalación, en el cartel del instalador, en la hoja de bienvenida y en el pie de la app.
+**Soporte oficial de Nirai Tech IA:** WhatsApp **11 7237-3270** (https://wa.me/5491172373270). Figura en la guía de activación y en el pie de la app.
 
-## Cómo funciona para el cliente
-- Cada cliente tiene **su copia** del backend en **su** cuenta de Google. Sus datos quedan en **su** Drive y vos no los ves.
-- Todos usan la misma app: `https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/v2/`. Cuando la mejorás, se actualiza para todos.
-- Cada cliente se conecta con su **link personal**: `…/v2/?conectar=XXXX`. Se genera al instalar y le llega por mail.
-- Quien entra a `/v2/` sin link personal usa la versión **local gratuita**, que guarda los datos en el navegador. Esa es la versión para compartir.
+## Cómo funciona para el cliente (modo directo, desde noviembre 2026)
+- **No se instala nada.** El cliente abre su link, toca **Conectar con Google**, acepta el permiso y listo. Funciona igual desde el **celular** o la PC.
+- La app usa Google Drive y Google Sheets directamente desde el navegador, con el permiso **`drive.file`**: solo ve los archivos que ella misma crea. Los datos quedan en **el Drive del cliente** (carpeta *FINANZAS NIRAI TECH IA*) y vos no los ves.
+- Link para clientes que pagaron: **`https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/v2/?conectar=google`** + la guía `https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/v2/instalar.html`.
+- Quien entra a `/v2/` sin ese link usa la **prueba gratis** (datos solo en el navegador) y no ve nada de Google.
+- ⚠️ El link es el mismo para todos los clientes: no es una llave. Alguien que lo reciba de un cliente podría usarlo. Para bloquearlo de verdad hace falta un servidor de licencias (se puede agregar más adelante).
+- Diferencias con la instalación vieja (planilla + Apps Script): no hay carpeta «Entrada» que se revise sola ni copia a las 3 AM. La copia de seguridad se hace una vez por día **al abrir la app**. Google da el permiso por **1 hora**: después aparece el botón «Conectar con Google» y se renueva con un toque (lo cargado mientras tanto queda guardado y se sube solo).
+- Las instalaciones viejas con link `?conectar=AKfy…` (la tuya, por ejemplo) **siguen funcionando igual**.
 
-## Lo que tenés que hacer una sola vez
-
-### 1. Publicar la pantalla de inicio de sesión (Google Cloud)
-Mientras esté en "Prueba", solo pueden entrar los "usuarios de prueba".
-1. Entrá a <https://console.cloud.google.com> → proyecto **FINANZAS NIRAI TECH IA** → **Google Auth Platform**.
-2. **Información de la marca**: completá estos campos.
-   - Página principal: `https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/v2/instalar.html`
+## Lo que tenés que hacer una sola vez (Google Cloud)
+Entrá a <https://console.cloud.google.com> → proyecto de la app (el del ID de cliente `288188064237-…`).
+1. **APIs y servicios → Biblioteca**: buscá y tocá **Habilitar** en **Google Drive API** y en **Google Sheets API**.
+2. **Google Auth Platform → Acceso a los datos → Agregar o quitar permisos**: tildá `…/auth/drive.file` («Ver, editar, crear y borrar solo los archivos específicos de Google Drive que uses con esta app») → Actualizar → **Guardar**. Es un permiso **no sensible**: no requiere la verificación de Google.
+3. **Información de la marca**: nombre *FINANZAS NIRAI TECH IA*, mail de soporte, y estos links:
+   - Página principal: `https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/v2/planes.html`
    - Política de privacidad: `https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/v2/privacidad.html`
    - Condiciones del servicio: `https://niraitechia.github.io/Finanzas-Nirai-Tech-IA/v2/terminos.html`
-3. **Público** → **Publicar app** → confirmar. La app solo pide email y perfil (permisos no sensibles), así que no hace falta verificación.
+   - **No subas logo** por ahora: con logo Google pide verificar la marca (tarda días).
+4. **Público**: el estado tiene que ser **En producción** (botón «Publicar app»). Si queda «En prueba», solo entran los mails cargados como usuarios de prueba.
+5. **Clientes → tu ID de cliente web → Orígenes autorizados de JavaScript**: tiene que estar `https://niraitechia.github.io` (ya debería estar).
 
-### 2. Crear la planilla instaladora (plantilla)
-1. Entrá a <https://sheets.new>.
-2. **Extensiones → Apps Script**:
-   - pegá [`apps-script/Code.gs`](https://raw.githubusercontent.com/NiraiTechIA/Finanzas-Nirai-Tech-IA/main/apps-script/Code.gs);
-   - en ⚙️ activá "Mostrar appsscript.json" y pegá [`apps-script/appsscript.json`](https://raw.githubusercontent.com/NiraiTechIA/Finanzas-Nirai-Tech-IA/main/apps-script/appsscript.json);
-   - guardá.
-3. En el editor, elegí la función **prepararPlantilla** → **Ejecutar** → autorizá. Deja la hoja de bienvenida lista.
-4. En la planilla: **Compartir** → Acceso general: **Cualquier persona con el enlace — Lector**.
-5. Copiá el link de la planilla y cambiá el final `/edit…` por `/copy`. Ese es el link del paso 1 del cliente. Cargalo en `v2/js/config.js` → `INSTALL_TEMPLATE_URL`, o pasámelo y lo cargo yo.
+Si falta el paso 1, la app avisa: «Falta activar Google Drive API / Sheets API».
 
-> **No uses la plantilla para tus propios datos.** Vos ya tenés tu backend funcionando.
-
-### 3. Antes de cobrar
+### Antes de cobrar
 - El CUIT no se publica por ahora (decisión del dueño). Agregarlo en términos y privacidad cuando se formalice la facturación.
 - Hacé que un abogado revise los términos y la privacidad, y consultá a tu contador por la facturación.
 - Respondé las solicitudes del **Botón de arrepentimiento** dentro de las 24 hs, con un código de identificación (por ejemplo `ARR-2026-001`).
 
-## Instalación del cliente
-> La guía `v2/instalar.html` **no está enlazada** en la app ni en la página de planes: se la mandás al cliente **después de que paga**. Quien prueba gratis no ve nada de conexión.
+## Activación del cliente
+> La guía `v2/instalar.html` **no está enlazada** en la app ni en la página de planes: se la mandás al cliente **después de que paga**, junto con el link `?conectar=google`.
 
-Modalidades: **asistida** (el cliente sigue la guía y vos lo acompañás por WhatsApp) o **remota con RustDesk** (el cliente instala RustDesk, te pasa el código y vos hacés los pasos en su computadora; el inicio de sesión de Google lo hace siempre el cliente).
+1. El cliente abre el link (celular o PC) y toca **Conectar con Google**.
+2. Elige su cuenta y acepta el permiso (si aparece una casilla, la tilda).
+3. Listo: en su Drive aparece la carpeta con la base de datos, los resúmenes, las copias y la planilla **Totales**.
 
-Ver `v2/instalar.html`: tiene ilustraciones de cada pantalla.
-1. **Crear mi copia** (link de la plantilla).
-2. En la copia: **📊 Finanzas → 1. Instalar**, aceptar los permisos. Crea la carpeta y la base de datos.
-3. **Publicar la conexión** (1 minuto):
-   - Extensiones → Apps Script → Implementar → Nueva implementación → ⚙️ Aplicación web.
-   - Ejecutar como: Yo · Quién tiene acceso: **Cualquier usuario** → Implementar.
-   - Copiar la URL y pegarla en **📊 Finanzas → 2. Pegar mi URL publicada**.
-4. **Abrir mi app** e iniciar sesión. El link personal también le llega por mail.
+Si necesita ayuda: **asistida** por WhatsApp o **remota con RustDesk** (el inicio de sesión de Google lo hace siempre el cliente).
 
-> La publicación automática (API de Apps Script) suele fallar en cuentas comunes. Por eso el paso 3 es manual y está explicado como un paso normal. Si en alguna cuenta funciona sola, el paso 3 se saltea.
-
-La IA es opcional: el cliente pega su clave gratuita de Google AI Studio en **Ajustes → Inteligencia artificial**.
+La IA es opcional: el cliente pega su clave gratuita de Google AI Studio en **Ajustes → Inteligencia artificial**. Queda guardada en su propio Drive (hoja «Privado» de su base de datos).
 
 ## Actualizaciones
 - **App (pantallas, lectores, reportes):** se actualiza sola para todos al publicar en GitHub.
-- **Backend (`Code.gs`):** cambia poco. Si cambia, el cliente pega el nuevo código en su copia y vuelve a tocar **📊 Finanzas → Instalar**. Su link no cambia.
+- **Modo directo:** no hay nada que actualizar del lado del cliente.
+- **Instalaciones viejas (`Code.gs`):** si cambia, se pega el nuevo código en la copia y se vuelve a tocar **📊 Finanzas → Instalar**. El link no cambia.
 
 ## Más adelante: dominio propio y código privado (Cloudflare Pages)
 Cuando tengas clientes:
